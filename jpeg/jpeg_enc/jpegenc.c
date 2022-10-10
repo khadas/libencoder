@@ -591,11 +591,16 @@ int hw_encode(jpegenc_handle_t handle, uint8_t *src, uint8_t *dst, enum jpegenc_
 		return -1;
 	}
 
-	if ((src == NULL) || (dst == NULL)) {
-		if (src == NULL)
-			printf("[%s:%d]param err!, src is NULL!\n", __FUNCTION__, __LINE__);
-		if (dst == NULL)
-			printf("[%s:%d]param err!, dst is NULL!\n", __FUNCTION__, __LINE__);
+	if ((mem_type == JPEGENC_LOCAL_BUFF) && (src == NULL)) {
+		printf("[%s:%d]param err!, src is NULL!\n", __FUNCTION__, __LINE__);
+		return -1;
+	}
+	if ((mem_type == JPEGENC_DMA_BUFF) && (dma_fd < 0)) {
+		printf("[%s:%d]param err!, dma_fd < 0\n", __FUNCTION__, __LINE__);
+		return -1;
+	}
+	if (dst == NULL) {
+		printf("[%s:%d]param err!, dst is NULL!\n", __FUNCTION__, __LINE__);
 		return -1;
 	}
 
