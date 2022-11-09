@@ -27,6 +27,8 @@
 #include "get_option.h"
 #include "vp_vc_codec_1_0.h"
 
+#include <sys/ioctl.h>
+
 #define HEVCERR_OUTPUT stdout
 #define MAX_GOP_LEN 300
 
@@ -65,6 +67,7 @@ static void FreeVariableMem(struct test_bench *tb);
 
 commandLine_s *all_pcml = NULL;
 commandLine_s *glob_cml = NULL;
+static int g_fd_enc = -1;
 
 
 #define WIDTH 3840
@@ -1186,6 +1189,8 @@ vc_codec_handle_t vc_encoder_init(vc_codec_id_t codec_id,
   int ret;
   VPMultiEncHandle* mHandle = (VPMultiEncHandle *) malloc(sizeof(VPMultiEncHandle));
 
+  g_fd_enc = open("/dev/vc8000", O_RDWR | O_SYNC);
+
   if (mHandle == NULL)
     goto exit;
   memset(mHandle, 0, sizeof(VPMultiEncHandle));
@@ -1330,39 +1335,37 @@ i32 encode_nal(vc_codec_handle_t codec_handle,
 
     gettimeofday(&readStart, NULL);
 
-    /* Read YUV to input buffer */
-    #if 0
-    if (read_picture(tb, cml->inputFormat, src_img_size, cml->lumWidthSrc,
-                   cml->lumHeightSrc, 0)) {
-      printf("Input data read over, try to find next input stream if any\n");
-      /* Next input stream (if any) */
-      encRet = OK;
-      goto error;
-    }
-    #else
-    switch (handle->cml.inputFormat) {
-    case VCENC_YUV420_PLANAR: {
-        /* Lum */
-        memcpy(handle->tb.lum, (unsigned char*)in_buffer_info->buf_info.in_ptr[0],handle->cml.lumWidthSrc*handle->cml.lumHeightSrc);
+    if (VC_DMA_TYPE == in_buffer_info->buf_type) {
+        struct versdrv_dma_buf_info_t versdrv_dma_buf_info;
+        versdrv_dma_buf_info.num_planes = in_buffer_info->buf_info.dma_info.num_planes;
+        versdrv_dma_buf_info.fd[0] = in_buffer_info->buf_info.dma_info.shared_fd[0];
+        ret = ioctl(g_fd_enc, HANTRO_IOCTL_CONFIG_DMA, &versdrv_dma_buf_info);
+        pEncIn->busLuma = versdrv_dma_buf_info.phys_addr[0];
+        pEncIn->busChromaU = pEncIn->busLuma + handle->cml.lumWidthSrc*handle->cml.lumHeightSrc;
+        pEncIn->busChromaV = pEncIn->busChromaU;
+    } else {
+        switch (handle->cml.inputFormat) {
+        case VCENC_YUV420_PLANAR: {
+            /* Lum */
+            memcpy(handle->tb.lum, (unsigned char*)in_buffer_info->buf_info.in_ptr[0],handle->cml.lumWidthSrc*handle->cml.lumHeightSrc);
 
-        /* Cb */
-        memcpy(handle->tb.cb, (unsigned char*)in_buffer_info->buf_info.in_ptr[0]+handle->cml.lumWidthSrc*handle->cml.lumHeightSrc,handle->cml.lumWidthSrc*handle->cml.lumHeightSrc/4);
+            /* Cb */
+            memcpy(handle->tb.cb, (unsigned char*)in_buffer_info->buf_info.in_ptr[0]+handle->cml.lumWidthSrc*handle->cml.lumHeightSrc,handle->cml.lumWidthSrc*handle->cml.lumHeightSrc/4);
 
-        /* Cr */
-        memcpy(handle->tb.cr, (unsigned char*)in_buffer_info->buf_info.in_ptr[0]+handle->cml.lumWidthSrc*handle->cml.lumHeightSrc*5/4,handle->cml.lumWidthSrc*handle->cml.lumHeightSrc/4);
-        break;
+            /* Cr */
+            memcpy(handle->tb.cr, (unsigned char*)in_buffer_info->buf_info.in_ptr[0]+handle->cml.lumWidthSrc*handle->cml.lumHeightSrc*5/4,handle->cml.lumWidthSrc*handle->cml.lumHeightSrc/4);
+            break;
+        }
+        case VCENC_YUV420_SEMIPLANAR:
+        case VCENC_YUV420_SEMIPLANAR_VU: {
+            /* Lum */
+            memcpy(handle->tb.lum, (unsigned char*)in_buffer_info->buf_info.in_ptr[0],handle->cml.lumWidthSrc*handle->cml.lumHeightSrc);
+            /* CbCr */
+            memcpy(handle->tb.cb, (unsigned char*)in_buffer_info->buf_info.in_ptr[0]+handle->cml.lumWidthSrc*handle->cml.lumHeightSrc,handle->cml.lumWidthSrc*handle->cml.lumHeightSrc/2);
+            break;
+        }
+        }
     }
-    case VCENC_YUV420_SEMIPLANAR:
-    case VCENC_YUV420_SEMIPLANAR_VU: {
-        /* Lum */
-        memcpy(handle->tb.lum, (unsigned char*)in_buffer_info->buf_info.in_ptr[0],handle->cml.lumWidthSrc*handle->cml.lumHeightSrc);
-        /* CbCr */
-        memcpy(handle->tb.cb, (unsigned char*)in_buffer_info->buf_info.in_ptr[0]+handle->cml.lumWidthSrc*handle->cml.lumHeightSrc,handle->cml.lumWidthSrc*handle->cml.lumHeightSrc/2);
-        break;
-    }
-    }
-
-    #endif
 
     pEncIn->dec400Enable = 1;
 
@@ -1615,6 +1618,7 @@ int vc_encoder_destroy(vc_codec_handle_t codec_handle)
     if (handle)
         free(handle);
 
+    close(g_fd_enc);
     return 1;
 }
 #endif

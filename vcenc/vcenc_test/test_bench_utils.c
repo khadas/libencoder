@@ -3278,7 +3278,7 @@ i32 ReturnIOBuffer(struct test_bench *tb, commandLine_s *cml, VCEncConsumedAddr 
 
         inputPicBufIndex = FindInputPicBufIdByBusAddr(tb, consumedAddrs->inputbufBusAddr,
                                                       cml->formatCustomizedType != -1);
-
+        inputPicBufIndex = 0;
         if (NOK == ReturnBufferById(tb->inputMemFlags, tb->buffer_cnt, inputPicBufIndex))
             iRet = NOK;
     }

@@ -356,6 +356,12 @@ typedef enum {
     EWL_CLIENT_TYPE_MAX
 } CLIENT_TYPE;
 
+struct versdrv_dma_buf_info_t {
+	u32 num_planes;
+	i32 fd[3];
+	u32 phys_addr[3]; /* phys address for DMA buffer */
+};
+
 /* Use 'k' as magic number */
 #define HANTRO_IOC_MAGIC 'k'
 
@@ -396,6 +402,9 @@ typedef enum {
 
 #define HANTRO_IOCH_GET_VCMD_ENABLE _IOWR(HANTRO_IOC_MAGIC, 50, u64)
 #define HANTRO_IOCH_GET_MMU_ENABLE _IOWR(HANTRO_IOC_MAGIC, 51, u32)
+#define HANTRO_IOCTL_CONFIG_DMA _IOWR(HANTRO_IOC_MAGIC, 52, struct versdrv_dma_buf_info_t)
+#define HANTRO_IOCTL_UNMAP_DMA _IOWR(HANTRO_IOC_MAGIC, 53, struct versdrv_dma_buf_info_t)
+
 
 #define GET_ENCODER_IDX(type_info) (CORE_VC8000E)
 

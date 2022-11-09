@@ -288,8 +288,8 @@ integrator: ARCH = -mcpu=arm9tdmi -mtune=arm9tdmi
 integrator: LIB += -lpthread
 
 versatile: ENVSET  = -DSDRAM_LM_BASE=0x00000000 \
-                     -DENC_MODULE_PATH=\"/tmp/dev/vc8000\" \
-                     -DMEMALLOC_MODULE_PATH=\"/tmp/dev/memalloc\"
+                     -DENC_MODULE_PATH=\"/dev/vc8000\" \
+                     -DMEMALLOC_MODULE_PATH=\"/dev/memalloc\"
 versatile: ENVSET  += -DEWL_NO_HW_TIMEOUT  -DARM_ARCH_SWAP
 versatile: CROSS_COMPILE = arm-none-linux-gnueabi-
 versatile: ARCH = -mcpu=arm926ej-s -mtune=arm926ej-s
@@ -302,8 +302,8 @@ versatile_multifile: LIB += -lpthread
 versatile_multifile: CFLAGS += -DMULTIFILEINPUT
 
 android: ENVSET  = -DSDRAM_LM_BASE=0x00000000 \
-                     -DENC_MODULE_PATH=\"/tmp/dev/vc8000\" \
-                     -DMEMALLOC_MODULE_PATH=\"/tmp/dev/memalloc\"
+                     -DENC_MODULE_PATH=\"/dev/vc8000\" \
+                     -DMEMALLOC_MODULE_PATH=\"/dev/memalloc\"
 android: ENVSET  += -DEWL_NO_HW_TIMEOUT  -DARM_ARCH_SWAP -DANDROID_EWL
 android: CROSS_COMPILE = arm-linux-androideabi-
 android: ARCH = -fno-exceptions -Wno-multichar -msoft-float -fpic -ffunction-sections -fdata-sections -funwind-tables -fstack-protector -Wa,--noexecstack -Werror=format-security -fno-short-enums -march=armv7-a -mfloat-abi=softfp -mfpu=neon
@@ -332,8 +332,8 @@ pci: CROSS_COMPILE=/opt/gcc-linaro-7.3.1-2018.05-x86_64_arm-linux-gnueabihf/bin/
 pci: ARCH=
 pci: ENVSET  = -DPC_PCI_FPGA_DEMO \
                -DSDRAM_LM_BASE=$(CHW_BASE_ADDRESS) \
-               -DENC_MODULE_PATH=\"/tmp/dev/vc8000\" \
-               -DMEMALLOC_MODULE_PATH=\"/tmp/dev/memalloc\"
+               -DENC_MODULE_PATH=\"/dev/vc8000\" \
+               -DMEMALLOC_MODULE_PATH=\"/dev/memalloc\"
 pci: ENVSET  += -DEWL_NO_HW_TIMEOUT -DARM_ARCH_SWAP
 pci: CFLAGS  += $(TRACEFLAGS)
 
