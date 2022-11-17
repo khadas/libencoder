@@ -7,6 +7,7 @@ include ../build/globalrules
 
 # the path where to find header files
 INCFLAGS = -I../inc -I../source/common -I../source/hevc
+INCFLAGS += -I./ -I./kernel-headers
 
 ifneq ($(target),)
   ifneq ($(target), default)
@@ -15,7 +16,7 @@ ifneq ($(target),)
 endif
 
 # list of used sourcefiles
-SRCS = test_bench.c test_bench_utils.c get_option.c test.c
+SRCS = test_bench.c test_bench_utils.c get_option.c test.c IONmem.c ion.c test_dma.c
 
 vpath %.c
 vpath %.c ../source/hevc

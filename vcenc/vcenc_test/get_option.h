@@ -18,7 +18,7 @@
 
 #include "base_type.h"
 #define LOGSIZEBUFFER 1024 * 10
-char *cml_all_log;
+static char *cml_all_log;
 //--%s=%d         one option matches the one cml-parameter
 //--%s=%d:%d:%d   one option matches the multi-cml
 #define MAX_NUM_ALINE 1024

@@ -36,6 +36,9 @@ typedef enum vc_img_format_e {
   VC_IMG_FMT_YUV420P = 0,
   VC_IMG_FMT_NV12,
   VC_IMG_FMT_NV21,
+  VC_IMG_FMT_YV12,
+  VC_IMG_FMT_RGB888,
+  VC_IMG_FMT_RGBA8888,
 } vc_img_format_t;
 
 typedef enum vc_frame_type_e {

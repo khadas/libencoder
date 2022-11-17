@@ -1,10 +1,12 @@
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "vp_vc_codec_1_0.h"
+#include "test_dma_api.h"
 
 static int encode_main(void *param);
-
+static struct usr_ctx_s ctx;
 /*-----------
   * main
   *-----------*/
@@ -63,11 +65,9 @@ int main(int argc, char **argv)
     } else {
 		memset(&cfg_encode, 0, sizeof(encodecCfgParam));
 
-		len = strlen(argv[1]) > ENCODER_STRING_LEN_MAX ? ENCODER_STRING_LEN_MAX : strlen(argv[1]);
-		strncpy(cfg_encode.srcfile, argv[1], len);
+		strncpy(cfg_encode.srcfile, argv[1], ENCODER_STRING_LEN_MAX-1);
 
-		len = strlen(argv[2]) > ENCODER_STRING_LEN_MAX ? ENCODER_STRING_LEN_MAX : strlen(argv[2]);
-		strncpy(cfg_encode.outfile, argv[2], len);
+		strncpy(cfg_encode.outfile, argv[2], ENCODER_STRING_LEN_MAX-1);
 
 		cfg_encode.width = atoi(argv[3]);
 		cfg_encode.height = atoi(argv[4]);
@@ -102,7 +102,6 @@ int encode_main(void *param)
 	int buf_type = 0;
 	int num_planes = 1;
 	vc_codec_id_t codec_id = VC_CODEC_ID_H264;
-	int len = 0;
 	FILE *fp = NULL;
 	FILE *outfp = NULL;
 	char srcfile[ENCODER_STRING_LEN_MAX] = {0};
@@ -194,11 +193,9 @@ int encode_main(void *param)
 		printf("codec is H264\n");
 
 
-	len = strlen(cfg_encode->srcfile) > ENCODER_STRING_LEN_MAX ? ENCODER_STRING_LEN_MAX : strlen(cfg_encode->srcfile);
-	strncpy(srcfile, cfg_encode->srcfile, len);
+	strncpy(srcfile, cfg_encode->srcfile, ENCODER_STRING_LEN_MAX);
 
-	len = strlen(cfg_encode->outfile) > ENCODER_STRING_LEN_MAX ? ENCODER_STRING_LEN_MAX : strlen(cfg_encode->outfile);
-	strncpy(outfile, cfg_encode->outfile, len);
+	strncpy(outfile, cfg_encode->outfile, ENCODER_STRING_LEN_MAX);
 
 	outbuffer_len = 8*1024 * 1024 * sizeof(char);
 	outbuffer = (unsigned char *) malloc(outbuffer_len);
@@ -222,8 +219,52 @@ int encode_main(void *param)
 	encode_info.frame_rate = framerate;
 	encode_info.gop = gop;
 	encode_info.img_format = fmt;
-#if 0
-	if (inbuf_info.buf_type == DMA_TYPE)
+
+	int ret = 0;
+	unsigned ysize;
+	unsigned usize;
+	unsigned vsize;
+	unsigned uvsize;
+	unsigned char *vaddr = NULL;
+	unsigned char *input[3] = { NULL };
+
+	if (inbuf_info.buf_stride) {
+		if (fmt == VC_IMG_FMT_RGB888)
+		{
+			framesize = inbuf_info.buf_stride * height * 3;
+		}
+		else if (fmt == VC_IMG_FMT_RGBA8888)
+		{
+			framesize = inbuf_info.buf_stride * height * 4;
+		}
+		else
+		{
+			framesize = inbuf_info.buf_stride * height * 3 / 2;
+		}
+		ysize = inbuf_info.buf_stride * height;
+		usize = inbuf_info.buf_stride * height / 4;
+		vsize = inbuf_info.buf_stride * height / 4;
+		uvsize = inbuf_info.buf_stride * height / 2;
+	} else {
+		if (fmt == VC_IMG_FMT_RGB888)
+		{
+			framesize = width * height * 3;
+		}
+		else if (fmt == VC_IMG_FMT_RGBA8888)
+		{
+			framesize = width * height * 4;
+		}
+		else
+		{
+			framesize = width * height * 3 / 2;
+		}
+		ysize = width * height;
+		usize = width * height / 4;
+		vsize = width * height / 4;
+		uvsize = width * height / 2;
+	}
+	vc_dma_info_t *dma_info = &(inbuf_info.buf_info.dma_info);
+	if (inbuf_info.buf_type == VC_DMA_TYPE)
 	{
 		dma_info = &(inbuf_info.buf_info.dma_info);
 		dma_info->num_planes = num_planes;
@@ -239,7 +280,7 @@ int encode_main(void *param)
 
 		if (dma_info->num_planes == 3)
 		{
-			if (fmt != IMG_FMT_YUV420P)
+			if (fmt != VC_IMG_FMT_YUV420P)
 			{
 				printf("error fmt %d\n", fmt);
 				goto exit;
@@ -258,7 +299,7 @@ int encode_main(void *param)
 				goto exit;
 			}
 
-			printf("hoan debug canvas >> alloc_dma_buffer y,ret=%d, vaddr=0x%x\n", ret,vaddr);
+			printf("hoan debug canvas >> alloc_dma_buffer y,ret=%d, vaddr=0x%p\n", ret,vaddr);
 			dma_info->shared_fd[0] = ret;
 			input[0] = vaddr;
 
@@ -277,7 +318,7 @@ int encode_main(void *param)
 			}
 			dma_info->shared_fd[1] = ret;
 			input[1] = vaddr;
-			printf("hoan debug canvas >> alloc_dma_buffer u,ret=%d, vaddr=0x%x\n", ret,vaddr);
+			printf("hoan debug canvas >> alloc_dma_buffer u,ret=%d, vaddr=0x%p\n", ret,vaddr);
 
 			ret = alloc_dma_buffer(&ctx, INPUT_BUFF_TYPE, vsize);
 			if (ret < 0)
@@ -295,7 +336,7 @@ int encode_main(void *param)
 
 			dma_info->shared_fd[2] = ret;
 			input[2] = vaddr;
-			printf("hoan debug canvas >> alloc_dma_buffer v,ret=%d, vaddr=0x%x\n", ret,vaddr);
+			printf("hoan debug canvas >> alloc_dma_buffer v,ret=%d, vaddr=0x%p\n", ret,vaddr);
 		} else if (dma_info->num_planes == 2)
 		{
 			ret = alloc_dma_buffer(&ctx, INPUT_BUFF_TYPE, ysize);
@@ -313,7 +354,7 @@ int encode_main(void *param)
 			}
 			dma_info->shared_fd[0] = ret;
 			input[0] = vaddr;
-			if (fmt != IMG_FMT_NV12 && fmt != IMG_FMT_NV21)
+			if (fmt != VC_IMG_FMT_NV12 && fmt != VC_IMG_FMT_NV21)
 			{
 				printf("error fmt %d\n", fmt);
 				goto exit;
@@ -353,12 +394,12 @@ int encode_main(void *param)
 			input[0] = vaddr;
 		}
 
+		inputBuffer =  input[0];
 		printf("in[0] %d, in[1] %d, in[2] %d\n", dma_info->shared_fd[0],
 		       dma_info->shared_fd[1], dma_info->shared_fd[2]);
 		printf("input[0] %p, input[1] %p,input[2] %p\n", input[0],
 		       input[1], input[2]);
 	} else
-#endif
     {
 		inputBuffer = (unsigned char *) malloc(framesize);
 		if (inputBuffer == NULL) {
@@ -417,8 +458,21 @@ exit:
 		fclose(outfp);
 	if (outbuffer != NULL)
 		free(outbuffer);
-	if (inputBuffer != NULL)
-		free(inputBuffer);
-    return encRet;
+	if (inbuf_info.buf_type == VC_DMA_TYPE) {
+		if (dma_info->shared_fd[0] >= 0)
+			close(dma_info->shared_fd[0]);
+
+		if (dma_info->shared_fd[1] >= 0)
+			close(dma_info->shared_fd[1]);
+
+		if (dma_info->shared_fd[2] >= 0)
+			close(dma_info->shared_fd[2]);
+
+		destroy_ctx(&ctx);
+	} else {
+	    if (inputBuffer != NULL)
+	        free(inputBuffer);
+	}
+	return encRet;
 }
 

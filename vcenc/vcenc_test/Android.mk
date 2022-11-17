@@ -19,7 +19,8 @@ include $(VCENC_PATH)/build/globalrules.mk
 LOCAL_C_INCLUDES        := \
                            $(VCENC_PATH)/source/hevc \
                            $(VCENC_PATH)/inc \
-                           $(VCENC_PATH)/source/common
+                           $(VCENC_PATH)/source/common \
+                           $(TOP)/system/memory/libion/include
 ifneq ($(target),)
   ifneq ($(target), default)
     CFLAGS += -DTARGET -D$(target)
@@ -27,13 +28,14 @@ ifneq ($(target),)
 endif
 
 # list of used sourcefiles
-LOCAL_SRC_FILES := test_bench.c test_bench_utils.c get_option.c
+LOCAL_SRC_FILES := test_bench.c test_bench_utils.c get_option.c IONmem.c test_dma.c
 
 #LIB = ../linux_reference/libh2enc.a
 LOCAL_SHARED_LIBRARIES := libcutils \
     liblog \
     libutils \
-    libvcenc
+    libvcenc \
+	libion
 
 # name of the output executable
 #TARGET = vc_test_enc
