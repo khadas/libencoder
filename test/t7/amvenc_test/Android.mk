@@ -41,6 +41,9 @@ LOCAL_CFLAGS += -Wno-multichar
 
 LOCAL_MODULE_TAGS := optional
 
-LOCAL_MODULE:= aml_enc_test
+LOCAL_MODULE:= t7_enc_test
+
+LOCAL_LICENSE_KINDS := SPDX-license-identifier-Apache-2.0 SPDX-license-identifier-BSD
+LOCAL_LICENSE_CONDITIONS := notice
 
 include $(BUILD_EXECUTABLE)
