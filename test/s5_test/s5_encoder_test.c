@@ -67,11 +67,11 @@ int main(int argc, char *argv[])
 	    exit(1);
 	}
         //h.264 test 1
-        system("aml_enc_test nv21_480p.yuv s5_es.h264.1 640 480 30 30 1000000 5 2 3 1 4");
+        system("aml_enc_test /vendor/bin/nv21_480p.yuv  /data/s5_es.h264.1 640 480 30 30 1000000 5 2 3 1 4");
 
 	sleep(1);
         //h.264 test 2
-        system("aml_enc_test nv21_480p.yuv s5_es.h264.2 640 480 30 30 1000000 5 2 3 1 4");
+        system("aml_enc_test /vendor/bin/nv21_480p.yuv  /data/s5_es.h264.2 640 480 30 30 1000000 5 2 3 1 4");
 
         if (my_system("md5sum s5_es.h264.1", result_avc_1, RET_LEN) != 0) {
             printf("md5sum s5_es.h264.1 failed\n");
@@ -102,12 +102,12 @@ int main(int argc, char *argv[])
 	}
 
         //h.265 test 1
-        system("aml_enc_test nv21_480p.yuv s5_es.h265.1 640 480 30 30 1000000 5 2 3 1 5");
+        system("aml_enc_test /vendor/bin/nv21_480p.yuv  /data/s5_es.h265.1 640 480 30 30 1000000 5 2 3 1 5");
 
 	sleep(1);
 
         //h.265 test 2
-        system("aml_enc_test nv21_480p.yuv s5_es.h265.2 640 480 30 30 1000000 5 2 3 1 5");
+        system("aml_enc_test /vendor/bin/nv21_480p.yuv  /data/s5_es.h265.2 640 480 30 30 1000000 5 2 3 1 5");
 
         if (my_system("md5sum s5_es.h265.1", result_hevc_1, RET_LEN) != 0) {
             printf("md5sum s5_es.h265.1 failed\n");
