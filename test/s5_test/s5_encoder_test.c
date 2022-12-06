@@ -148,7 +148,7 @@ EXIT:
         result_avc_2 = NULL;
     }
 
-    system("rm -f  s5_es* ");
+    system("rm -f /data/s5_es*");
 
     return 0;
 }
