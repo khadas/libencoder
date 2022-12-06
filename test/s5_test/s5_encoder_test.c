@@ -66,66 +66,65 @@ int main(int argc, char *argv[])
 	    printf("avc calloc failed\n");
 	    exit(1);
 	}
-        //h.264 test 1
-        system("aml_enc_test /vendor/bin/nv21_480p.yuv  /data/s5_es.h264.1 640 480 30 30 1000000 5 2 3 1 4");
+	//h.264 test 1
+	system("aml_enc_test /vendor/bin/nv21_480p.yuv  /data/s5_es.h264.1 640 480 30 30 1000000 5 2 3 1 4");
 
 	sleep(1);
-        //h.264 test 2
-        system("aml_enc_test /vendor/bin/nv21_480p.yuv  /data/s5_es.h264.2 640 480 30 30 1000000 5 2 3 1 4");
+	//h.264 test 2
+	system("aml_enc_test /vendor/bin/nv21_480p.yuv  /data/s5_es.h264.2 640 480 30 30 1000000 5 2 3 1 4");
 
-        if (my_system("md5sum s5_es.h264.1", result_avc_1, RET_LEN) != 0) {
-            printf("md5sum s5_es.h264.1 failed\n");
-            goto EXIT;
+	if (my_system("md4sum /data/s5_es.h264.1", result_avc_1, RET_LEN) != 0) {
+	    printf("md5sum /data/s5_es.h264.1 failed\n");
+	    goto EXIT;
 	}
-        if (my_system("md5sum s5_es.h264.2", result_avc_2, RET_LEN) != 0) {
-            printf("md5sum s5_es.h264.2 failed\n");
-            goto EXIT;
+	if (my_system("md5sum /data/s5_es.h264.2", result_avc_2, RET_LEN) != 0) {
+	    printf("md5sum /data/s5_es.h264.2 failed\n");
+	    goto EXIT;
 	}
 
-        if (strlen(result_avc_1) != 0 && strlen(result_avc_2) != 0) {
+	if (strlen(result_avc_1) != 0 && strlen(result_avc_2) != 0) {
 	    ret = strcmp(result_avc_1, result_avc_2);
 	}
 
-        printf("\n\n{\"result\": %s, \"item\": s5_h264_encoder}\n\n\n", \
-             (ret == 0) ? "true" : "false");
-    }
+	printf("\n\n{\"result\": %s, \"item\": s5_h264_encoder}\n\n\n", \
+	     (ret == 0) ? "true" : "false");
+	}
 
-    //h.265 test
-    ret = -1;
-    if ((atoi(argv[1]) & 2) == 2) {
-        result_hevc_1 = (char *) calloc(RET_LEN, sizeof(char));
-        result_hevc_2 = (char *) calloc(RET_LEN, sizeof(char));
+	//h.265 test
+	ret = -1;
+	if ((atoi(argv[1]) & 2) == 2) {
+	    result_hevc_1 = (char *) calloc(RET_LEN, sizeof(char));
+	    result_hevc_2 = (char *) calloc(RET_LEN, sizeof(char));
 
 	if (result_hevc_1 == NULL || result_hevc_2 == NULL) {
 	    printf("hevc calloc failed\n");
 	    exit(1);
 	}
 
-        //h.265 test 1
-        system("aml_enc_test /vendor/bin/nv21_480p.yuv  /data/s5_es.h265.1 640 480 30 30 1000000 5 2 3 1 5");
+	//h.265 test 1
+	system("aml_enc_test /vendor/bin/nv21_480p.yuv  /data/s5_es.h265.1 640 480 30 30 1000000 5 2 3 1 5");
 
 	sleep(1);
 
-        //h.265 test 2
-        system("aml_enc_test /vendor/bin/nv21_480p.yuv  /data/s5_es.h265.2 640 480 30 30 1000000 5 2 3 1 5");
+	//h.265 test 2
+	system("aml_enc_test /vendor/bin/nv21_480p.yuv  /data/s5_es.h265.2 640 480 30 30 1000000 5 2 3 1 5");
 
-        if (my_system("md5sum s5_es.h265.1", result_hevc_1, RET_LEN) != 0) {
-            printf("md5sum s5_es.h265.1 failed\n");
-            goto EXIT;
+	if (my_system("md5sum /data/s5_es.h265.1", result_hevc_1, RET_LEN) != 0) {
+	    printf("md5sum /data/s5_es.h265.1 failed\n");
+	    goto EXIT;
 	}
-        if (my_system("md5sum s5_es.h265.2", result_hevc_2, RET_LEN) != 0) {
-            printf("md5sum s5_es.h265.2 failed\n");
-            goto EXIT;
+	if (my_system("md5sum /data/s5_es.h265.2", result_hevc_2, RET_LEN) != 0) {
+	    printf("md5sum /data/s5_es.h265.2 failed\n");
+	    goto EXIT;
 	}
 
-        if (strlen(result_hevc_1) != 0 && strlen(result_hevc_2) != 0) {
-            ret = strcmp(result_hevc_1, result_hevc_2);
-        }
+	if (strlen(result_hevc_1) != 0 && strlen(result_hevc_2) != 0) {
+	    ret = strcmp(result_hevc_1, result_hevc_2);
+	}
 
-        printf("\n\n{\"result\": %s, \"item\": s5_h265_encoder}\n\n\n", \
-             (ret == 0) ? "true" : "false");
-    }
-
+	printf("\n\n{\"result\": %s, \"item\": s5_h265_encoder}\n\n\n", \
+	     (ret == 0) ? "true" : "false");
+	}
 
 EXIT:
 
