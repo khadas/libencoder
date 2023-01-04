@@ -41,6 +41,9 @@
 #define MAX_DELAY_NUM (MAX_CORE_NUM + MAX_CUTREE_DEPTH)
 #define MAX_BITS_STAT 1024
 
+typedef uint32_t uint32;
+typedef unsigned long ulong;
+
 /* Structure for command line options */
 typedef struct commandLine_s {
     char *input;
@@ -794,7 +797,29 @@ typedef enum {
   PHYSICAL_BUFF = 2,
   DMA_BUFF = 3,
   MAX_TYPE = 4,
-} AMVEncBufferType;
+} VCEncBufferType;
+
+typedef enum {
+  VCENC_YUV420P = 0,
+  VCENC_NV12,
+  VCENC_NV21,
+  VCENC_FRAME_FMT
+} VCEncFrameFmt;
+
+typedef struct FrameIO_s {
+  ulong YCbCr[3];
+  VCEncBufferType type;
+  VCEncFrameFmt fmt;
+  int pitch;
+  int height;
+  uint32 disp_order;
+  uint32 op_flag;
+  uint32 canvas;
+  uint32 num_planes;
+  int shared_fd[3];
+  // OUTPUT  bit-stream information
+  int encoded_frame_type; //define of VCEncPictureCodingType in hevcencapi.h
+} VCMultiEncFrameIO;
 
 #define CMLTRACE(...)                                                                              \
     do {                                                                                           \

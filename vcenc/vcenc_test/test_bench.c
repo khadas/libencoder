@@ -1117,7 +1117,7 @@ error:
 typedef struct vp_multi_s {
   commandLine_s cml;
   struct test_bench tb;
-  AMVEncBufferType bufType;
+  VCEncBufferType bufType;
   bool mPrependSPSPPSToIDRFrames;
   bool mSpsPpsHeaderReceived;
   bool mKeyFrameRequested;
@@ -1287,7 +1287,8 @@ error:
 i32 encode_nal(vc_codec_handle_t codec_handle,
                     vc_buffer_info_t *in_buffer_info,
                     unsigned char* buffer,
-                    unsigned int* buf_nal_size)
+                    unsigned int* buf_nal_size,
+                    VCMultiEncFrameIO *Retframe)
 {
     VPMultiEncHandle *handle = (VPMultiEncHandle *)codec_handle;
     VCEncIn *pEncIn = &(handle->tb.encIn);
@@ -1422,10 +1423,11 @@ i32 encode_nal(vc_codec_handle_t codec_handle,
       if (handle->tb.flexRefsFile == NULL) {
           pEncIn->picture_cnt++;
       }
+      Retframe->encoded_frame_type = encOut.codingType;
 
       gettimeofday(&handle->tb.timeFrameEnd, NULL);
-      printf("=== Time(us %u HW+SW) ===\n",
-             uTimeDiff(handle->tb.timeFrameEnd, handle->tb.timeFrameStart) - frameWriteTime);
+      //printf("=== Time(us %u HW+SW) ===\n",
+             //uTimeDiff(handle->tb.timeFrameEnd, handle->tb.timeFrameStart) - frameWriteTime);
       break;
     case VCENC_OUTPUT_BUFFER_OVERFLOW:
       handle->tb.encIn.picture_cnt++;
@@ -1455,6 +1457,7 @@ vc_encoding_metadata_t vc_encoder_encode(vc_codec_handle_t codec_handle,
 {
     int ret;
     uint32_t dataLength = 0;
+    VCMultiEncFrameIO videoRet;
     VPMultiEncHandle* handle = (VPMultiEncHandle *)codec_handle;
 
     vc_encoding_metadata_t result;
@@ -1466,7 +1469,7 @@ vc_encoding_metadata_t vc_encoder_encode(vc_codec_handle_t codec_handle,
       result.is_valid = false;
       return result;
     }
-    handle->bufType = (AMVEncBufferType)(in_buffer_info->buf_type);
+    handle->bufType = (VCEncBufferType)(in_buffer_info->buf_type);
     if (!handle->mSpsPpsHeaderReceived) {
         ret = encode_header(codec_handle, out, (unsigned int *)&dataLength);
         if (ret == 0) {
@@ -1486,20 +1489,32 @@ vc_encoding_metadata_t vc_encoder_encode(vc_codec_handle_t codec_handle,
           return result;
         }
     }
+    memset(&videoRet, 0, sizeof(videoRet));
 
-    ret = encode_nal(codec_handle, in_buffer_info, out, (unsigned int*)&dataLength);
+    ++(handle->mNumInputFrames);
+
+    ret = encode_nal(codec_handle, in_buffer_info, out, (unsigned int*)&dataLength, &videoRet);
     if (ret != 0) {
         Error(2, ERR, "encode_nal() fails");
         result.is_valid = false;
         return result;
     }
-    if ((handle->mNumInputFrames == 0) &&
-        (handle->mSPSPPSData)) {
-        memmove(out + handle->mSPSPPSDataSize, out, dataLength);
-        memcpy(out, handle->mSPSPPSData, handle->mSPSPPSDataSize);
-        dataLength += handle->mSPSPPSDataSize;
+    if ((videoRet.encoded_frame_type == 0) ||  handle->mNumInputFrames == 1) {
+        if ((handle->mNumInputFrames == 1) &&
+            (handle->mSPSPPSData)) {
+            memmove(out + handle->mSPSPPSDataSize, out, dataLength);
+            memcpy(out, handle->mSPSPPSData, handle->mSPSPPSDataSize);
+            dataLength += handle->mSPSPPSDataSize;
+        }
+        result.is_key_frame = true;
     }
-    ++(handle->mNumInputFrames);
+
+    if (videoRet.encoded_frame_type == 0)
+        result.extra.frame_type = VC_FRAME_TYPE_I;
+    else if (videoRet.encoded_frame_type == 1)
+        result.extra.frame_type = VC_FRAME_TYPE_P;
+    else if (videoRet.encoded_frame_type == 2)
+        result.extra.frame_type = VC_FRAME_TYPE_B;
 
     result.is_valid = true;
     result.encoded_data_length_in_bytes = dataLength;
