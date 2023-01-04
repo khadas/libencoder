@@ -29,6 +29,17 @@
 
 #include <sys/ioctl.h>
 
+#ifdef __ANDROID__
+#define LOG_NDEBUG 0
+#define LOG_TAG "MultiDriver_bench"
+#include <utils/Log.h>
+
+#define MULTI_TRACE_E(fmt, ...)         ALOGE(fmt,##__VA_ARGS__);
+#else
+#define MULTI_TRACE_E(fmt, ...)         printf(fmt,##__VA_ARGS__);
+#endif
+
+
 #define HEVCERR_OUTPUT stdout
 #define MAX_GOP_LEN 300
 
@@ -343,88 +354,88 @@ int SetCodingCtrl(struct test_bench *tb, VCEncInst encoder, commandLine_s *cml)
         codingCfg.roi8Qp = cml->roi8Qp;
 
         if (codingCfg.cirInterval)
-            printf("  CIR: %d %d\n", codingCfg.cirStart, codingCfg.cirInterval);
+            MULTI_TRACE_E("  CIR: %d %d\n", codingCfg.cirStart, codingCfg.cirInterval);
 
         if (codingCfg.intraArea.enable)
-            printf("  IntraArea: %dx%d-%dx%d\n", codingCfg.intraArea.left, codingCfg.intraArea.top,
+            MULTI_TRACE_E("  IntraArea: %dx%d-%dx%d\n", codingCfg.intraArea.left, codingCfg.intraArea.top,
                    codingCfg.intraArea.right, codingCfg.intraArea.bottom);
 
         if (codingCfg.ipcm1Area.enable)
-            printf("  IPCM1Area: %dx%d-%dx%d\n", codingCfg.ipcm1Area.left, codingCfg.ipcm1Area.top,
+            MULTI_TRACE_E("  IPCM1Area: %dx%d-%dx%d\n", codingCfg.ipcm1Area.left, codingCfg.ipcm1Area.top,
                    codingCfg.ipcm1Area.right, codingCfg.ipcm1Area.bottom);
 
         if (codingCfg.ipcm2Area.enable)
-            printf("  IPCM2Area: %dx%d-%dx%d\n", codingCfg.ipcm2Area.left, codingCfg.ipcm2Area.top,
+            MULTI_TRACE_E("  IPCM2Area: %dx%d-%dx%d\n", codingCfg.ipcm2Area.left, codingCfg.ipcm2Area.top,
                    codingCfg.ipcm2Area.right, codingCfg.ipcm2Area.bottom);
 
         if (codingCfg.ipcm3Area.enable)
-            printf("  IPCM3Area: %dx%d-%dx%d\n", codingCfg.ipcm3Area.left, codingCfg.ipcm3Area.top,
+            MULTI_TRACE_E("  IPCM3Area: %dx%d-%dx%d\n", codingCfg.ipcm3Area.left, codingCfg.ipcm3Area.top,
                    codingCfg.ipcm3Area.right, codingCfg.ipcm3Area.bottom);
 
         if (codingCfg.ipcm4Area.enable)
-            printf("  IPCM4Area: %dx%d-%dx%d\n", codingCfg.ipcm4Area.left, codingCfg.ipcm4Area.top,
+            MULTI_TRACE_E("  IPCM4Area: %dx%d-%dx%d\n", codingCfg.ipcm4Area.left, codingCfg.ipcm4Area.top,
                    codingCfg.ipcm4Area.right, codingCfg.ipcm4Area.bottom);
 
         if (codingCfg.ipcm5Area.enable)
-            printf("  IPCM5Area: %dx%d-%dx%d\n", codingCfg.ipcm5Area.left, codingCfg.ipcm5Area.top,
+            MULTI_TRACE_E("  IPCM5Area: %dx%d-%dx%d\n", codingCfg.ipcm5Area.left, codingCfg.ipcm5Area.top,
                    codingCfg.ipcm5Area.right, codingCfg.ipcm5Area.bottom);
 
         if (codingCfg.ipcm6Area.enable)
-            printf("  IPCM6Area: %dx%d-%dx%d\n", codingCfg.ipcm6Area.left, codingCfg.ipcm6Area.top,
+            MULTI_TRACE_E("  IPCM6Area: %dx%d-%dx%d\n", codingCfg.ipcm6Area.left, codingCfg.ipcm6Area.top,
                    codingCfg.ipcm6Area.right, codingCfg.ipcm6Area.bottom);
 
         if (codingCfg.ipcm7Area.enable)
-            printf("  IPCM7Area: %dx%d-%dx%d\n", codingCfg.ipcm7Area.left, codingCfg.ipcm7Area.top,
+            MULTI_TRACE_E("  IPCM7Area: %dx%d-%dx%d\n", codingCfg.ipcm7Area.left, codingCfg.ipcm7Area.top,
                    codingCfg.ipcm7Area.right, codingCfg.ipcm7Area.bottom);
 
         if (codingCfg.ipcm8Area.enable)
-            printf("  IPCM8Area: %dx%d-%dx%d\n", codingCfg.ipcm8Area.left, codingCfg.ipcm8Area.top,
+            MULTI_TRACE_E("  IPCM8Area: %dx%d-%dx%d\n", codingCfg.ipcm8Area.left, codingCfg.ipcm8Area.top,
                    codingCfg.ipcm8Area.right, codingCfg.ipcm8Area.bottom);
 
         if (codingCfg.roi1Area.enable)
-            printf("  ROI 1: %s %d  %dx%d-%dx%d\n", codingCfg.roi1Qp >= 0 ? "QP" : "QP Delta",
+            MULTI_TRACE_E("  ROI 1: %s %d  %dx%d-%dx%d\n", codingCfg.roi1Qp >= 0 ? "QP" : "QP Delta",
                    codingCfg.roi1Qp >= 0 ? codingCfg.roi1Qp : codingCfg.roi1DeltaQp,
                    codingCfg.roi1Area.left, codingCfg.roi1Area.top, codingCfg.roi1Area.right,
                    codingCfg.roi1Area.bottom);
 
         if (codingCfg.roi2Area.enable)
-            printf("  ROI 2: %s %d  %dx%d-%dx%d\n", codingCfg.roi2Qp >= 0 ? "QP" : "QP Delta",
+            MULTI_TRACE_E("  ROI 2: %s %d  %dx%d-%dx%d\n", codingCfg.roi2Qp >= 0 ? "QP" : "QP Delta",
                    codingCfg.roi2Qp >= 0 ? codingCfg.roi2Qp : codingCfg.roi2DeltaQp,
                    codingCfg.roi2Area.left, codingCfg.roi2Area.top, codingCfg.roi2Area.right,
                    codingCfg.roi2Area.bottom);
 
         if (codingCfg.roi3Area.enable)
-            printf("  ROI 3: %s %d  %dx%d-%dx%d\n", codingCfg.roi3Qp >= 0 ? "QP" : "QP Delta",
+            MULTI_TRACE_E("  ROI 3: %s %d  %dx%d-%dx%d\n", codingCfg.roi3Qp >= 0 ? "QP" : "QP Delta",
                    codingCfg.roi3Qp >= 0 ? codingCfg.roi3Qp : codingCfg.roi3DeltaQp,
                    codingCfg.roi3Area.left, codingCfg.roi3Area.top, codingCfg.roi3Area.right,
                    codingCfg.roi3Area.bottom);
 
         if (codingCfg.roi4Area.enable)
-            printf("  ROI 4: %s %d  %dx%d-%dx%d\n", codingCfg.roi4Qp >= 0 ? "QP" : "QP Delta",
+            MULTI_TRACE_E("  ROI 4: %s %d  %dx%d-%dx%d\n", codingCfg.roi4Qp >= 0 ? "QP" : "QP Delta",
                    codingCfg.roi4Qp >= 0 ? codingCfg.roi4Qp : codingCfg.roi4DeltaQp,
                    codingCfg.roi4Area.left, codingCfg.roi4Area.top, codingCfg.roi4Area.right,
                    codingCfg.roi4Area.bottom);
 
         if (codingCfg.roi5Area.enable)
-            printf("  ROI 5: %s %d  %dx%d-%dx%d\n", codingCfg.roi5Qp >= 0 ? "QP" : "QP Delta",
+            MULTI_TRACE_E("  ROI 5: %s %d  %dx%d-%dx%d\n", codingCfg.roi5Qp >= 0 ? "QP" : "QP Delta",
                    codingCfg.roi5Qp >= 0 ? codingCfg.roi5Qp : codingCfg.roi5DeltaQp,
                    codingCfg.roi5Area.left, codingCfg.roi5Area.top, codingCfg.roi5Area.right,
                    codingCfg.roi5Area.bottom);
 
         if (codingCfg.roi6Area.enable)
-            printf("  ROI 6: %s %d  %dx%d-%dx%d\n", codingCfg.roi6Qp >= 0 ? "QP" : "QP Delta",
+            MULTI_TRACE_E("  ROI 6: %s %d  %dx%d-%dx%d\n", codingCfg.roi6Qp >= 0 ? "QP" : "QP Delta",
                    codingCfg.roi6Qp >= 0 ? codingCfg.roi6Qp : codingCfg.roi6DeltaQp,
                    codingCfg.roi6Area.left, codingCfg.roi6Area.top, codingCfg.roi6Area.right,
                    codingCfg.roi6Area.bottom);
 
         if (codingCfg.roi7Area.enable)
-            printf("  ROI 7: %s %d  %dx%d-%dx%d\n", codingCfg.roi7Qp >= 0 ? "QP" : "QP Delta",
+            MULTI_TRACE_E("  ROI 7: %s %d  %dx%d-%dx%d\n", codingCfg.roi7Qp >= 0 ? "QP" : "QP Delta",
                    codingCfg.roi7Qp >= 0 ? codingCfg.roi7Qp : codingCfg.roi7DeltaQp,
                    codingCfg.roi7Area.left, codingCfg.roi7Area.top, codingCfg.roi7Area.right,
                    codingCfg.roi7Area.bottom);
 
         if (codingCfg.roi8Area.enable)
-            printf("  ROI 8: %s %d  %dx%d-%dx%d\n", codingCfg.roi8Qp >= 0 ? "QP" : "QP Delta",
+            MULTI_TRACE_E("  ROI 8: %s %d  %dx%d-%dx%d\n", codingCfg.roi8Qp >= 0 ? "QP" : "QP Delta",
                    codingCfg.roi8Qp >= 0 ? codingCfg.roi8Qp : codingCfg.roi8DeltaQp,
                    codingCfg.roi8Area.left, codingCfg.roi8Area.top, codingCfg.roi8Area.right,
                    codingCfg.roi8Area.bottom);
@@ -664,8 +675,8 @@ int run_instance(commandLine_s *cml)
     i32 ret = OK;
 
     //ret = encode_main(cml);
-    printf("\n");
-    printf("encode ret = %d\n", ret);
+    MULTI_TRACE_E("\n");
+    MULTI_TRACE_E("encode ret = %d\n", ret);
 
     return ret;
 }
@@ -793,7 +804,7 @@ void processFrame(struct test_bench *tb, VCEncInst encoder, commandLine_s *cml, 
             *streamSize += tilestreamSize;
             *maxSliceSize = MAX(*maxSliceSize, pEncOut->maxSliceStreamSize);
 
-            printf("=== Encoded %i bits=%d totalBits=%lu averageBitrate=%lu HWCycles=%d "
+            MULTI_TRACE_E("=== Encoded %i bits=%d totalBits=%lu averageBitrate=%lu HWCycles=%d "
                    "codingType=%d\n",
                    tb->picture_encoded_cnt, tilestreamSize * 8, (long unsigned int)(*total_bits),
                    (long unsigned int)(*total_bits * tb->outputRateNumer) /
@@ -1200,7 +1211,7 @@ vc_codec_handle_t vc_encoder_init(vc_codec_id_t codec_id,
     goto exit;
 
   if (!allocVariableMem(&mHandle->tb, &mHandle->cml)) {
-      printf("allocVariableNem error!\n");
+      MULTI_TRACE_E("allocVariableNem error!\n");
       goto exit;
   }
 
@@ -1388,7 +1399,7 @@ i32 encode_nal(vc_codec_handle_t codec_handle,
 
     gettimeofday(&handle->tb.timeFrameStart, NULL);
 
-    printf("=== Encoding %i %s ...\n", handle->tb.picture_enc_cnt, handle->tb.input);
+    MULTI_TRACE_E("=== Encoding %i %s ...\n", handle->tb.picture_enc_cnt, handle->tb.input);
       pEncIn->externalSEICount = 0;
       pEncIn->pExternalSEI = NULL;
 
@@ -1426,8 +1437,9 @@ i32 encode_nal(vc_codec_handle_t codec_handle,
       Retframe->encoded_frame_type = encOut.codingType;
 
       gettimeofday(&handle->tb.timeFrameEnd, NULL);
-      //printf("=== Time(us %u HW+SW) ===\n",
-             //uTimeDiff(handle->tb.timeFrameEnd, handle->tb.timeFrameStart) - frameWriteTime);
+
+      MULTI_TRACE_E("=== Time(us %u HW+SW) ===\n",
+             uTimeDiff(handle->tb.timeFrameEnd, handle->tb.timeFrameStart) - frameWriteTime);
       break;
     case VCENC_OUTPUT_BUFFER_OVERFLOW:
       handle->tb.encIn.picture_cnt++;
@@ -1483,7 +1495,7 @@ vc_encoding_metadata_t vc_encoder_encode(vc_codec_handle_t codec_handle,
             handle->mNumInputFrames = 0;
             handle->mSpsPpsHeaderReceived = true;
         } else {
-          printf("Encode SPS and PPS error, encoderStatus = %d. handle: %p\n",
+          MULTI_TRACE_E("Encode SPS and PPS error, encoderStatus = %d. handle: %p\n",
                ret, (void*)handle);
           result.is_valid = false;
           return result;
@@ -1847,7 +1859,7 @@ int OpenEncoder(commandLine_s *cml, VCEncInst *pEnc, struct test_bench *tb)
     cfg.gopSize = tb->gopSize;
 
     if (cml->parallelCoreNum > 1 && cfg.width * cfg.height < 256 * 256) {
-        printf("Disable multicore for small resolution (< 255*255)\n");
+        MULTI_TRACE_E("Disable multicore for small resolution (< 255*255)\n");
         cfg.parallelCoreNum = cml->parallelCoreNum = 1;
     }
     cfg.codedChromaIdc = cml->codedChromaIdc;
@@ -1894,7 +1906,7 @@ int OpenEncoder(commandLine_s *cml, VCEncInst *pEnc, struct test_bench *tb)
         CloseEncoder(encoder, tb);
         return -1;
     }
-    printf("Get rate control: qp %2d qpRange I[%2d, %2d] PB[%2d, %2d] %8d bps  "
+    MULTI_TRACE_E("Get rate control: qp %2d qpRange I[%2d, %2d] PB[%2d, %2d] %8d bps  "
            "pic %d skip %d  hrd %d  cpbSize %d cpbMaxRate %d bitrateWindow %d "
            "intraQpDelta %2d\n",
            rcCfg.qpHdr, rcCfg.qpMinI, rcCfg.qpMaxI, rcCfg.qpMinPB, rcCfg.qpMaxPB,
@@ -2017,7 +2029,7 @@ int OpenEncoder(commandLine_s *cml, VCEncInst *pEnc, struct test_bench *tb)
     rcCfg.frameRateNum = cml->outputRateNumer;
     rcCfg.frameRateDenom = cml->outputRateDenom;
 
-    printf("Set rate control: qp %2d qpRange I[%2d, %2d] PB[%2d, %2d] %9d bps  "
+    MULTI_TRACE_E("Set rate control: qp %2d qpRange I[%2d, %2d] PB[%2d, %2d] %9d bps  "
            "pic %d skip %d  hrd %d"
            "  cpbSize %d cpbMaxRate %d bitrateWindow %d intraQpDelta %2d "
            "fixedIntraQp %2d\n",
@@ -2058,7 +2070,7 @@ int OpenEncoder(commandLine_s *cml, VCEncInst *pEnc, struct test_bench *tb)
         return -1;
     }
 
-    printf("Get PreP: format %d : rotation %d cc %d : scaling %d\n", preProcCfg.inputType,
+    MULTI_TRACE_E("Get PreP: format %d : rotation %d cc %d : scaling %d\n", preProcCfg.inputType,
            preProcCfg.rotation, preProcCfg.colorConversion.type, preProcCfg.scaledOutput);
 
     u32 origWidth;
@@ -2072,7 +2084,7 @@ int OpenEncoder(commandLine_s *cml, VCEncInst *pEnc, struct test_bench *tb)
             (tileId == 0) ? preProcCfg.origHeight : preProcCfg.tileExtra[tileId - 1].origHeight;
         xOffset = (tileId == 0) ? preProcCfg.xOffset : preProcCfg.tileExtra[tileId - 1].xOffset;
         yOffset = (tileId == 0) ? preProcCfg.yOffset : preProcCfg.tileExtra[tileId - 1].yOffset;
-        printf("input%u %4dx%d : offset%u %4dx%d\n", tileId, origWidth, origHeight, tileId, xOffset,
+        MULTI_TRACE_E("input%u %4dx%d : offset%u %4dx%d\n", tileId, origWidth, origHeight, tileId, xOffset,
                yOffset);
     }
 
@@ -2141,7 +2153,7 @@ int OpenEncoder(commandLine_s *cml, VCEncInst *pEnc, struct test_bench *tb)
     preProcCfg.input_alignment = 1 << cml->exp_of_input_alignment;
     preProcCfg.scaledOutputFormat = cml->scaledOutputFormat;
 
-    printf("Set PreP: format %d : rotation %d cc %d : scaling %d : scaling format "
+    MULTI_TRACE_E("Set PreP: format %d : rotation %d cc %d : scaling %d : scaling format "
            "%d\n",
            preProcCfg.inputType, preProcCfg.rotation, preProcCfg.colorConversion.type,
            preProcCfg.scaledOutput, preProcCfg.scaledOutputFormat);
@@ -2153,7 +2165,7 @@ int OpenEncoder(commandLine_s *cml, VCEncInst *pEnc, struct test_bench *tb)
             (tileId == 0) ? preProcCfg.origHeight : preProcCfg.tileExtra[tileId - 1].origHeight;
         xOffset = (tileId == 0) ? preProcCfg.xOffset : preProcCfg.tileExtra[tileId - 1].xOffset;
         yOffset = (tileId == 0) ? preProcCfg.yOffset : preProcCfg.tileExtra[tileId - 1].yOffset;
-        printf("input%u %4dx%d : offset%u %4dx%d\n", tileId, origWidth, origHeight, tileId, xOffset,
+        MULTI_TRACE_E("input%u %4dx%d : offset%u %4dx%d\n", tileId, origWidth, origHeight, tileId, xOffset,
                yOffset);
     }
 
@@ -2348,7 +2360,7 @@ int AllocRes(commandLine_s *cmdl, VCEncInst enc, struct test_bench *tb)
         tb->pictureStabMem.mem_type = EXT_WR | VPU_RD | EWL_MEM_TYPE_DPB;
         ret = EWLMallocLinear(ewl_inst, pictureSize, alignment, &tb->pictureStabMem);
         if (ret != EWL_OK) {
-            printf("ERROR: Cannot allocate enough memory for stabilization!\n");
+            MULTI_TRACE_E("ERROR: Cannot allocate enough memory for stabilization!\n");
             tb->pictureStabMem.virtualAddress = NULL;
             return 1;
         }
@@ -2546,22 +2558,22 @@ int AllocRes(commandLine_s *cmdl, VCEncInst enc, struct test_bench *tb)
     tb->mvReplaceBuffer.virtualAddress = NULL;
 
     for (coreIdx = 0; coreIdx < tb->buffer_cnt; coreIdx++) {
-        printf("Input buffer[%d] size:          %d bytes\n", coreIdx,
+        MULTI_TRACE_E("Input buffer[%d] size:          %d bytes\n", coreIdx,
                tb->pictureMemFactory[coreIdx].size);
-        printf("Input buffer[%d] bus address:   %p\n", coreIdx,
+        MULTI_TRACE_E("Input buffer[%d] bus address:   %p\n", coreIdx,
                (void *)tb->pictureMemFactory[coreIdx].busAddress);
-        printf("Input buffer[%d] user address:  %p\n", coreIdx,
+        MULTI_TRACE_E("Input buffer[%d] user address:  %p\n", coreIdx,
                tb->pictureMemFactory[coreIdx].virtualAddress);
     }
 
     for (coreIdx = 0; coreIdx < coreNum; coreIdx++) {
         for (tileId = 0; tileId < tb->tileColumnNum; tileId++) {
             for (iBuf = 0; iBuf < tb->streamBufNum; iBuf++) {
-                printf("Output buffer[%d] size:         %d bytes\n", MAX(coreIdx, tileId),
+                MULTI_TRACE_E("Output buffer[%d] size:         %d bytes\n", MAX(coreIdx, tileId),
                        tb->outbufMemFactory[coreIdx][tileId][iBuf].size);
-                printf("Output buffer[%d] bus address:  %p\n", MAX(coreIdx, tileId),
+                MULTI_TRACE_E("Output buffer[%d] bus address:  %p\n", MAX(coreIdx, tileId),
                        (void *)tb->outbufMemFactory[coreIdx][tileId][iBuf].busAddress);
-                printf("Output buffer[%d] user address: %p\n", MAX(coreIdx, tileId),
+                MULTI_TRACE_E("Output buffer[%d] user address: %p\n", MAX(coreIdx, tileId),
                        tb->outbufMemFactory[coreIdx][tileId][iBuf].virtualAddress);
             }
         }
@@ -2672,7 +2684,7 @@ void HEVCSliceReady(VCEncSliceReady *slice)
             writeStrmBufs(ctl->outStreamFile, &slice->streamBufs, pos, streamSize, 0);
         }
 
-        printf("%s: streamSize %d\n", __FUNCTION__, streamSize);
+        MULTI_TRACE_E("%s: streamSize %d\n", __FUNCTION__, streamSize);
         pos += streamSize;
         /* Store the slice pointer for next callback */
         ctl->streamPos = pos;
@@ -2725,16 +2737,16 @@ ReEncodeStrategy ReEncodeCurrentFrame(const VCEncStatisticOut *stat, NewEncodePa
         new_params->output_buffer_mem[0].mem_type = VPU_WR | CPU_WR | CPU_RD | EWL_MEM_TYPE_SLICE;
         if (EWLMallocLinear(stat->kEwl, new_size, 0, new_output_buffer) != EWL_OK) {
             use_new_params = 0;
-            printf("Faild, try to reallocate a new output buffer...\n");
+            MULTI_TRACE_E("Faild, try to reallocate a new output buffer...\n");
         } else {
             // reallocate the buffer
-            printf("adjusted output buffer when buffer overflow\n");
-            printf("Output buffer bus address: from %p to %p\n",
+            MULTI_TRACE_E("adjusted output buffer when buffer overflow\n");
+            MULTI_TRACE_E("Output buffer bus address: from %p to %p\n",
                    (void *)cur_output_buffer->busAddress, (void *)new_output_buffer->busAddress);
-            printf("Output buffer user address: from %p to %p\n",
+            MULTI_TRACE_E("Output buffer user address: from %p to %p\n",
                    (void *)cur_output_buffer->virtualAddress,
                    (void *)new_output_buffer->virtualAddress);
-            printf("Output buffer size: from %d to %d bytes\n", cur_output_buffer->size,
+            MULTI_TRACE_E("Output buffer size: from %d to %d bytes\n", cur_output_buffer->size,
                    new_output_buffer->size);
             /* copy the previous vps, sps, pps to new output buffer */
             if (stat->header_stream_byte)
@@ -2775,7 +2787,7 @@ void EncStreamSegmentReady(void *cb_data)
             fwrite(start_code_prefix, 1, 4, ctl->outStreamFile);
             ctl->startCodeDone = 1;
         }
-        printf("<----receive segment irq %d\n", ctl->streamRDCounter);
+        MULTI_TRACE_E("<----receive segment irq %d\n", ctl->streamRDCounter);
         WriteStrm(ctl->outStreamFile, (u32 *)streamBase, ctl->segmentSize, 0);
 
         ctl->streamRDCounter++;

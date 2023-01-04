@@ -20,7 +20,7 @@ POLLING_ISR = y
 else
 POLLING_ISR = n
 endif
-POLLING_ISR = y
+POLLING_ISR = n
 # 3. Assemble C Code
 # ASM = y: Enable Intel SSE/AVX2
 ASM = n
