@@ -358,6 +358,7 @@ typedef enum {
 
 struct versdrv_dma_buf_info_t {
 	u32 num_planes;
+	u32 canvas_index;
 	i32 fd[3];
 	u32 phys_addr[3]; /* phys address for DMA buffer */
 };
@@ -404,6 +405,7 @@ struct versdrv_dma_buf_info_t {
 #define HANTRO_IOCH_GET_MMU_ENABLE _IOWR(HANTRO_IOC_MAGIC, 51, u32)
 #define HANTRO_IOCTL_CONFIG_DMA _IOWR(HANTRO_IOC_MAGIC, 52, struct versdrv_dma_buf_info_t)
 #define HANTRO_IOCTL_UNMAP_DMA _IOWR(HANTRO_IOC_MAGIC, 53, struct versdrv_dma_buf_info_t)
+#define HANTRO_IOCTL_READ_CANVAS _IOWR(HANTRO_IOC_MAGIC, 54, struct versdrv_dma_buf_info_t)
 
 
 #define GET_ENCODER_IDX(type_info) (CORE_VC8000E)
