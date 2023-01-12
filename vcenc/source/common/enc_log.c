@@ -113,11 +113,11 @@ static char *_get_time_stamp(char *timestamp)
     return timestamp;
 }
 
+static int init_done_flag = -1;
 int VCEncLogInit(unsigned int out_dir, unsigned int out_level, unsigned int trace_map,
                  unsigned int check_map)
 {
     FILE *fp1, *fp2;
-    static int init_done_flag = -1;
 
     if (1 == init_done_flag) {
         return 0;
@@ -150,6 +150,9 @@ int VCEncLogInit(unsigned int out_dir, unsigned int out_level, unsigned int trac
 
 int VCEncLogDestroy(void)
 {
+    if (-1 == init_done_flag) {
+        return 0;
+    }
     if ((LOG_ONE_FILE == env_log.out_dir) && (VCENC_LOG_QUIET != env_log.out_level)) {
         fclose(log_output[STREAM_TRACE_FILE]);
         fclose(log_output[STREAM_CHECK_FILE]);

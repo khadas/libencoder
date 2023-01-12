@@ -1210,6 +1210,7 @@ vc_codec_handle_t vc_encoder_init(vc_codec_id_t codec_id,
   if (ret < 0)
     goto exit;
 
+  VCEncLogInit(mHandle->cml.logOutDir, mHandle->cml.logOutLevel, mHandle->cml.logTraceMap, mHandle->cml.logCheckMap);
   if (!allocVariableMem(&mHandle->tb, &mHandle->cml)) {
       MULTI_TRACE_E("allocVariableNem error!\n");
       goto exit;
