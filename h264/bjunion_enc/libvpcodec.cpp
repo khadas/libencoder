@@ -549,7 +549,7 @@ int vl_video_encoder_encode(vl_codec_handle_t codec_handle, vl_frame_type_t fram
     return dataLength;
 }
 
-int vl_video_encoder_destory(vl_codec_handle_t codec_handle)
+int vl_video_encoder_destroy(vl_codec_handle_t codec_handle)
 {
     AMVEncHandle *handle = (AMVEncHandle *)codec_handle;
 

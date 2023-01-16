@@ -71,7 +71,7 @@ int vl_video_encoder_encode(vl_codec_handle_t handle, vl_frame_type_t type, char
  *@param ：handle 视频编码器handle
  *@return ：成功返回1，失败返回0
  */
-int vl_video_encoder_destory(vl_codec_handle_t handle);
+int vl_video_encoder_destroy(vl_codec_handle_t handle);
 
 /**
  * 初始化解码器

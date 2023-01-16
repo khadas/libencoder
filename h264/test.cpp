@@ -506,7 +506,7 @@ static void *encode_thread(void *param) {
         pconfig_param->num--;
     }
 
-    vl_video_encoder_destory(handle_enc);
+    vl_video_encoder_destroy(handle_enc);
 #ifdef __ANDROID__
     printf("instance:%d,total_encode_time: %lld, num_actually_encoded: %d, fps=%3.3f\n", pconfig_param->instance_index,total_encode_time, num_actually_encoded, num_actually_encoded*1.0*1000000/total_encode_time);
 #endif
