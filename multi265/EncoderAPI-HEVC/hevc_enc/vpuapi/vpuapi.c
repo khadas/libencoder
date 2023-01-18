@@ -505,8 +505,10 @@ RetCode VPU_EncClose(EncHandle handle)
         if (pEncInfo->vbFbcCTbl.size)
             vdi_free_dma_memory(pCodecInst->coreIdx, &pEncInfo->vbFbcCTbl);
 
-        if (pEncInfo->vbTemp.size)
-            vdi_dettach_dma_memory(pCodecInst->coreIdx, &pEncInfo->vbTemp);
+        if (pEncInfo->vbTemp.size) {
+            //vdi_dettach_dma_memory(pCodecInst->coreIdx, &pEncInfo->vbTemp);
+            vdi_free_dma_memory(pCodecInst->coreIdx, &pEncInfo->vbTemp);
+        }
     }
 
     if (pCodecInst->codecMode == C7_AVC_ENC) {
