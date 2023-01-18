@@ -363,6 +363,9 @@ encoding_metadata_hevc_t vl_video_encoder_encode_hevc(vl_codec_handle_hevc_t cod
         } else if (in_buffer_info->buf_fmt == IMG_FMT_RGB888) {
           VLOG(INFO, "img_format is IMG_FMT_RGB888 \n");
           videoInput.fmt = AMVENC_RGB888;
+        } else if (in_buffer_info->buf_fmt == IMG_FMT_RGBA8888) {
+          VLOG(INFO, "img_format is IMG_FMT_RGBA8888 \n");
+          videoInput.fmt = AMVENC_RGBA8888;
         }
 
         if (handle->bufType == DMA_BUFF) {
