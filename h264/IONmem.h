@@ -9,11 +9,16 @@
 
 #ifndef IONMEM_H
 #define IONMEM_H
+#ifdef __ANDROID__
+#include <ion/ion.h>
+#else
 #include "ion.h"
+#endif
 #include <stdbool.h>
 #if defined (__cplusplus)
 extern "C" {
 #endif
+#define ION_FLAG_EXTEND_MESON_HEAP          (1 << 30)
 
 typedef struct IONMEM_AllocParams {
     ion_user_handle_t   mIonHnd;
