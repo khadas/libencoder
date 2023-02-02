@@ -2089,7 +2089,7 @@ void default_parameter(commandLine_s *cml)
     cml->amountPerLoopBack = 0;
 
     /*stride*/
-    cml->exp_of_input_alignment = 6;
+    cml->exp_of_input_alignment = 0;
     cml->exp_of_ref_alignment = 6;
     cml->exp_of_ref_ch_alignment = 6;
     cml->exp_of_aqinfo_alignment = 6;
