@@ -332,7 +332,8 @@ extern "C" {
     int vdi_set_bit_firmware_to_pm(u32 core_idx, const u16 *code);
     int vdi_get_system_endian(u32 core_idx);
     int vdi_convert_endian(u32 core_idx, unsigned int endian);
-	int vdi_sys_sync_inst_param(struct vpudrv_inst_param_t *pvip);
+    int vdi_sys_sync_inst_param(struct vpudrv_inst_param_t *pvip);
+    int vdi_config_dma_canvas(u32 core_idx, vpu_dma_buf_canvas_info_t *info);
 
 #if defined(SUPPORT_SW_UART) || defined(SUPPORT_SW_UART_V2)
 	int vdi_get_task_num(u32 core_idx);
