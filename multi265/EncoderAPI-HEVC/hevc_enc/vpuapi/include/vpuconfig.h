@@ -61,6 +61,8 @@
 #define MAX_DEC_PIC_WIDTH               4096
 #define MAX_DEC_PIC_HEIGHT              2304
 
+#define MAX_ENC_HEVC_INTRA_PERIOD       1024
+
 //  Application specific configuration
 #ifdef HAPS_SIM
 #define VPU_ENC_TIMEOUT                 (30000*10000)

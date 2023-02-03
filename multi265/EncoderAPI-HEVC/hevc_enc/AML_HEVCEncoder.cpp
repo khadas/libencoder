@@ -286,11 +286,11 @@ static BOOL SetupEncoderOpenParam(EncOpenParam *pEncOP, AMVHEVCEncParams* InitPa
         param->useLongTerm = 0;
 
     /* for CMD_ENC_SEQ_GOP_PARAM */
-    param->gopPresetIdx     = PRESET_IDX_IPP; //pCfg->hevcCfg.gopPresetIdx;//
-    //if (InitParam->idr_period == 1)
-    //    param->gopPresetIdx = PRESET_IDX_ALL_I; //all I frame
-    //else
-    //    param->gopPresetIdx = PRESET_IDX_IPP     ;//PRESET_IDX_IPP PRESET_IDX_IPP_SINGLE
+    //param->gopPresetIdx     = PRESET_IDX_IPP; //pCfg->hevcCfg.gopPresetIdx;//
+    if (InitParam->idr_period == 1)
+        param->gopPresetIdx = PRESET_IDX_ALL_I; //all I frame
+    else
+        param->gopPresetIdx = PRESET_IDX_IPP     ;//PRESET_IDX_IPP PRESET_IDX_IPP_SINGLE
     /* for CMD_ENC_SEQ_INTRA_PARAM */
     param->decodingRefreshType = 1; //pCfg->hevcCfg.decodingRefreshType;
     param->intraPeriod      = InitParam->idr_period; //pCfg->hevcCfg.intraPeriod;
