@@ -396,6 +396,8 @@ RetCode Wave4VpuEncSetup(CodecInst* instance)
 
     VpuWriteReg(coreIdx, W4_CMD_ENC_SEQ_GOP_PARAM,  pHevc->gopPresetIdx);
 
+    if (pHevc->intraPeriod > MAX_ENC_HEVC_INTRA_PERIOD)
+        pHevc->intraPeriod = 0;//0 - implies an infinite period
     VpuWriteReg(coreIdx, W4_CMD_ENC_SEQ_INTRA_PARAM, (pHevc->decodingRefreshType<<0)    |
                                                      (pHevc->intraQP<<3)                |
                                                      (pHevc->forcedIdrHeaderEnable<<9)  |
