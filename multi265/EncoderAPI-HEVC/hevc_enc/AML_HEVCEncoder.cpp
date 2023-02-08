@@ -409,15 +409,22 @@ static BOOL SetupEncoderOpenParam(EncOpenParam *pEncOP, AMVHEVCEncParams* InitPa
     param->timeScale            = pEncOP->frameRateInfo * 1000; //pCfg->hevcCfg.timeScale;
     param->numTicksPocDiffOne   = 0; //pCfg->hevcCfg.numTicksPocDiffOne;
 
-    param->vuiParam.vuiParamFlags       = 1; // when vuiParamFlags == 0, VPU doesn't encode VUI//pCfg->hevcCfg.vuiParam.vuiParamFlags;
-    //param->vuiParam.vuiAspectRatioIdc   = pCfg->hevcCfg.vuiParam.vuiAspectRatioIdc;
-    //param->vuiParam.vuiSarSize          = pCfg->hevcCfg.vuiParam.vuiSarSize;
-    //param->vuiParam.vuiOverScanAppropriate  = pCfg->hevcCfg.vuiParam.vuiOverScanAppropriate;
-    //param->vuiParam.videoSignal         = pCfg->hevcCfg.vuiParam.videoSignal;
-    //param->vuiParam.vuiChromaSampleLoc  = pCfg->hevcCfg.vuiParam.vuiChromaSampleLoc;
-    //param->vuiParam.vuiDispWinLeftRight = pCfg->hevcCfg.vuiParam.vuiDispWinLeftRight;
-    //param->vuiParam.vuiDispWinTopBottom = pCfg->hevcCfg.vuiParam.vuiDispWinTopBottom;
-
+	if (InitParam->vui_info_present) {
+        param->vuiParam.vuiParamFlags       = 0xFFFFFFFF & ((InitParam->video_signal_type<<5) | (InitParam->color_description<<6)); // when vuiParamFlags == 0, VPU doesn't encode VUI//pCfg->hevcCfg.vuiParam.vuiParamFlags;
+        //param->vuiParam.vuiAspectRatioIdc   = pCfg->hevcCfg.vuiParam.vuiAspectRatioIdc;
+        //param->vuiParam.vuiSarSize          = pCfg->hevcCfg.vuiParam.vuiSarSize;
+        //param->vuiParam.vuiOverScanAppropriate  = pCfg->hevcCfg.vuiParam.vuiOverScanAppropriate;
+        param->vuiParam.videoSignal         = (
+                                                    (0)|  // VIDEO_FORMAT
+                                                    ((InitParam->range)<<3)|  // VIDEO_FULL_RANGE_FLAG
+                                                    ((InitParam->primaries)<<4)|  // COLOUR_PRIMARIES
+                                                    ((InitParam->transfer)<<12)|  // TRANSFER_CHARACTERISTICS
+                                                    ((InitParam->matrix)<<20)  // MATRIX_COEFFS
+                                                );
+        //param->vuiParam.vuiChromaSampleLoc  = pCfg->hevcCfg.vuiParam.vuiChromaSampleLoc;
+        //param->vuiParam.vuiDispWinLeftRight = pCfg->hevcCfg.vuiParam.vuiDispWinLeftRight;
+        //param->vuiParam.vuiDispWinTopBottom = pCfg->hevcCfg.vuiParam.vuiDispWinTopBottom;
+   }
     pEncOP->encodeVuiRbsp        = 0; //pCfg->hevcCfg.vuiDataEnable;
     pEncOP->vuiRbspDataSize      = VUI_HRD_RBSP_BUF_SIZE; //pCfg->hevcCfg.vuiDataSize;
     pEncOP->encodeHrdRbspInVPS   = 0; //pCfg->hevcCfg.hrdInVPS;

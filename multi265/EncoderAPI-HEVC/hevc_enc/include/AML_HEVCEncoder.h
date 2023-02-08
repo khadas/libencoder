@@ -109,6 +109,14 @@ typedef struct HEVCEncParams_s {
     AMVEncFrameFmt fmt;
     int es_buf_sz;        /* ES buffer size */
     uint32 param_change_enable; /* enable on the fly change parameters*/
+
+    bool vui_info_present;
+    bool video_signal_type; /*video_signal_type_present_flag*/
+    bool color_description; /*color_description_present_flag*/
+    int primaries; /*color primaries*/
+    int transfer; /*color transfer charicstics*/
+    int matrix; /* color space matrix coefficients*/
+    bool range; /*color range flag, 0:full, 1:limitedd*/
 } AMVHEVCEncParams;
 
 typedef struct {

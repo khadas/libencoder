@@ -185,6 +185,13 @@ AMVEnc_Status initEncParams(AMVHEVCEncHandle *handle,
     handle->mEncParams.initQP = 30;
     handle->mEncParams.BitrateScale = HEVC_OFF;
     handle->mEncParams.refresh_type = HEVC_CRA;
+    handle->mEncParams.vui_info_present = encode_info.vui_info_present;
+    handle->mEncParams.video_signal_type = encode_info.video_signal_type;
+    handle->mEncParams.color_description = encode_info.color_description;
+    handle->mEncParams.primaries = encode_info.primaries;
+    handle->mEncParams.transfer = encode_info.transfer;
+    handle->mEncParams.matrix = encode_info.matrix;
+    handle->mEncParams.range = encode_info.range;
     return AMVENC_SUCCESS;
 }
 
