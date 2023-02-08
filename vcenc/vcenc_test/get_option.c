@@ -1937,7 +1937,7 @@ void default_parameter(commandLine_s *cml)
     cml->min_tr_size = 4;
     cml->tr_depth_intra = 2; //mfu =>0
     cml->tr_depth_inter = (cml->max_cu_size == 64) ? 4 : 3;
-    cml->rdoLevel = 3;
+    cml->rdoLevel = 1;
     cml->intraPicRate = 0; // only first is IDR.
     cml->codecFormat = VCENC_VIDEO_CODEC_HEVC;
     if (IS_H264(cml->codecFormat)) {

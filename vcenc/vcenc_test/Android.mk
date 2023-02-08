@@ -61,8 +61,9 @@ LOCAL_C_INCLUDES        :=  vp_vc_codec_1_0.h
 # list of used sourcefiles
 LOCAL_SRC_FILES := test.c
 
-LOCAL_SHARED_LIBRARIES := libvc_codec
-
+LOCAL_SHARED_LIBRARIES := libvc_codec \
+    liblog \
+    libutils
 LOCAL_MODULE_TAGS := optional
 
 LOCAL_MODULE:= vc_test_enc

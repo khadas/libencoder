@@ -4,6 +4,16 @@
 
 #include "vp_vc_codec_1_0.h"
 #include "test_dma_api.h"
+#include <sys/time.h>
+#ifdef __ANDROID__
+#define LOG_NDEBUG 0
+#define LOG_TAG "MultiDriver_bench"
+#include <utils/Log.h>
+
+#define MULTI_TRACE_E(fmt, ...)         ALOGE(fmt,##__VA_ARGS__);
+#else
+#define MULTI_TRACE_E(fmt, ...)         printf(fmt,##__VA_ARGS__);
+#endif
 
 static int encode_main(void *param);
 static struct usr_ctx_s ctx;
@@ -21,6 +31,8 @@ static struct usr_ctx_s ctx;
 
 typedef struct {
 	int   nstream;
+	struct timeval timeFrameStart;
+	struct timeval timeFrameEnd;
 	char  srcfile[ENCODER_STRING_LEN_MAX];    // yuv data url in your root fs
 	char  outfile[ENCODER_STRING_LEN_MAX];    // stream url in your root fs
 	int   width;           // width
@@ -35,13 +47,21 @@ typedef struct {
 	int   codec_id;        // 4 : h.264, 5 : h.265
 } encodecCfgParam;
 
+// Helper function to calculate time diffs.
+static unsigned int uTimeDiff(struct timeval end, struct timeval start)
+{
+	return (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
+}
+
+//return timeDiff in u64
+static unsigned long long uTimeDiffLL(struct timeval end, struct timeval start)
+{
+	return (unsigned long long )(end.tv_sec - start.tv_sec) * 1000000 + (unsigned long long )(end.tv_usec - start.tv_usec);
+}
+
 int main(int argc, char **argv)
 {
-    int i;
-
-	FILE *fp_cfg_encode = NULL;
 	encodecCfgParam cfg_encode;
-	int len = 0;
 	if (argc < 13) {
         printf("Amlogic Encoder API \n");
         printf(" usage: vc_enc_test"
@@ -109,6 +129,10 @@ int encode_main(void *param)
 	vc_encode_info_t encode_info;
 	vc_codec_handle_t handle_enc = 0;
 	vc_encoding_metadata_t encoding_metadata;
+	unsigned int frameCntTotal = 0;
+	unsigned int frameWriteTime = 0;
+	unsigned long long totalTime = 0, ioTime = 0;
+	struct timeval timeStart, timeEnd, readStart, readEnd, writeStart, writeEnd;
 
 	if (NULL != param)
 		cfg_encode = (encodecCfgParam *)param;
@@ -429,15 +453,22 @@ int encode_main(void *param)
         goto exit;
 	}
 
+	gettimeofday(&timeStart, NULL);
 	while (num > 0) {
         /* Read YUV to input buffer */
+        gettimeofday(&readStart, NULL);
         if (fread(inputBuffer, 1, framesize, fp) != framesize)
         {
             printf("read input file error!\n");
             goto exit;
         }
+        gettimeofday(&readEnd, NULL);
+        ioTime += uTimeDiff(readEnd, readStart);
+        gettimeofday(&cfg_encode->timeFrameStart, NULL);
 		encoding_metadata =
 		    vc_encoder_encode(handle_enc, outbuffer, &inbuf_info, &ret_buf);
+		gettimeofday(&writeStart, NULL);
+
 		if (encoding_metadata.is_valid)
 		{
             fwrite(outbuffer, 1, encoding_metadata.encoded_data_length_in_bytes, outfp);
@@ -446,9 +477,22 @@ int encode_main(void *param)
 			printf("encode error %d!\n",
 			       encoding_metadata.encoded_data_length_in_bytes);
 		}
-        num --;
-    }
-    encRet = 0;
+		gettimeofday(&writeEnd, NULL);
+		frameWriteTime = uTimeDiff(writeEnd, writeStart);
+		ioTime += frameWriteTime;
+		gettimeofday(&cfg_encode->timeFrameEnd, NULL);
+		num --;
+		frameCntTotal ++;
+	}
+	encRet = 0;
+	gettimeofday(&timeEnd, NULL);
+
+	totalTime = uTimeDiffLL(timeEnd, timeStart);
+	MULTI_TRACE_E("[Total time: %llu us], [IO time: %llu us]\n", totalTime, ioTime);
+	if (frameCntTotal > 1) {
+		MULTI_TRACE_E("[Encode Total time: %llu us], [avgTime: %llu us], [avgfps: %d]\n", totalTime - ioTime,
+			   (totalTime - ioTime) / frameCntTotal, 1*1000*1000/((totalTime - ioTime) / frameCntTotal));
+	}
 exit:
 	if (handle_enc)
 		vc_encoder_destroy(handle_enc);
