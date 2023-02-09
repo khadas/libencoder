@@ -33,9 +33,9 @@ typedef enum vc_codec_id_e {
 
 typedef enum vc_img_format_e {
   VC_IMG_FMT_NONE,
-  VC_IMG_FMT_YUV420P = 0,
   VC_IMG_FMT_NV12,
   VC_IMG_FMT_NV21,
+  VC_IMG_FMT_YUV420P,
   VC_IMG_FMT_YV12,
   VC_IMG_FMT_RGB888,
   VC_IMG_FMT_RGBA8888,

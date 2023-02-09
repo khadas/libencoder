@@ -1135,6 +1135,7 @@ typedef struct vp_multi_s {
   bool mSkipFrameRequested;
   int mLongTermRefRequestFlags;
   int mNumInputFrames;
+  int fmt;
   int mSPSPPSDataSize;
   char *mSPSPPSData;
   int shared_fd[3];
@@ -1166,9 +1167,22 @@ i32 initEncParams(VPMultiEncHandle *handle,
     handle->cml.outputRateNumer = encode_info.frame_rate;
     handle->cml.codecFormat = codec_id;
     handle->cml.outReconFrame = 0;
-    handle->cml.inputFormat = encode_info.img_format;
     handle->cml.lumWidthSrc = encode_info.width;
     handle->cml.lumHeightSrc = encode_info.height;
+
+    if (encode_info.img_format == VC_IMG_FMT_NV12) {
+        handle->cml.inputFormat = VCENC_YUV420_SEMIPLANAR;
+    } else if (encode_info.img_format == VC_IMG_FMT_NV21) {
+        handle->cml.inputFormat = VCENC_YUV420_SEMIPLANAR_VU;
+    } else if (encode_info.img_format == VC_IMG_FMT_YUV420P) {
+        handle->cml.inputFormat = VCENC_YUV420_PLANAR;
+    } else if (encode_info.img_format == VC_IMG_FMT_RGBA8888) {
+        handle->cml.inputFormat = VCENC_BGR888;
+    } else {
+        MULTI_TRACE_E("img_format %d not supprot\n",encode_info.img_format);
+        return -ret;
+    }
+    handle->fmt = handle->cml.inputFormat;
 
     if (Parameter_Check(&handle->cml) != OK)
         return -ret;
@@ -1355,7 +1369,8 @@ i32 encode_nal(vc_codec_handle_t codec_handle,
         ret = ioctl(g_fd_enc, HANTRO_IOCTL_CONFIG_DMA, &versdrv_dma_buf_info);
         pEncIn->busLuma = versdrv_dma_buf_info.phys_addr[0];
         pEncIn->busChromaU = pEncIn->busLuma + handle->cml.lumWidthSrc*handle->cml.lumHeightSrc;
-        pEncIn->busChromaV = pEncIn->busChromaU;
+        if (handle->cml.inputFormat == VCENC_YUV420_PLANAR)
+            pEncIn->busChromaV = pEncIn->busChromaU + handle->cml.lumWidthSrc*handle->cml.lumHeightSrc/4;
     } else if (VC_CANVAS_TYPE == in_buffer_info->buf_type) {
         struct versdrv_dma_buf_info_t versdrv_dma_buf_info;
         versdrv_dma_buf_info.canvas_index = in_buffer_info->buf_info.canvas;
@@ -1382,6 +1397,10 @@ i32 encode_nal(vc_codec_handle_t codec_handle,
                 memcpy(handle->tb.lum, (unsigned char*)in_buffer_info->buf_info.in_ptr[0],handle->cml.lumWidthSrc*handle->cml.lumHeightSrc);
                 /* CbCr */
                 memcpy(handle->tb.cb, (unsigned char*)in_buffer_info->buf_info.in_ptr[0]+handle->cml.lumWidthSrc*handle->cml.lumHeightSrc,handle->cml.lumWidthSrc*handle->cml.lumHeightSrc/2);
+                break;
+            }
+            case VCENC_BGR888: {
+                memcpy(handle->tb.lum, (unsigned char*)in_buffer_info->buf_info.in_ptr[0],handle->cml.lumWidthSrc*handle->cml.lumHeightSrc*4);
                 break;
             }
         }
@@ -1481,7 +1500,9 @@ vc_encoding_metadata_t vc_encoder_encode(vc_codec_handle_t codec_handle,
     VPMultiEncHandle* handle = (VPMultiEncHandle *)codec_handle;
 
     vc_encoding_metadata_t result;
+    VCEncPreProcessingCfg preProcCfg;
 
+    memset(&preProcCfg, 0, sizeof(VCEncPreProcessingCfg));
     memset(&result, 0, sizeof(vc_encoding_metadata_t));
 
     if (in_buffer_info == NULL) {
@@ -1513,6 +1534,34 @@ vc_encoding_metadata_t vc_encoder_encode(vc_codec_handle_t codec_handle,
 
     ++(handle->mNumInputFrames);
 
+    if (in_buffer_info->buf_fmt == VC_IMG_FMT_NV12) {
+      handle->cml.inputFormat = VCENC_YUV420_SEMIPLANAR;
+    } else if (in_buffer_info->buf_fmt == VC_IMG_FMT_NV21) {
+      handle->cml.inputFormat = VCENC_YUV420_SEMIPLANAR_VU;
+    } else if (in_buffer_info->buf_fmt == VC_IMG_FMT_YUV420P) {
+      handle->cml.inputFormat = VCENC_YUV420_PLANAR;
+    } else if (in_buffer_info->buf_fmt == VC_IMG_FMT_RGBA8888) {
+      handle->cml.inputFormat = VCENC_BGR888;
+    }
+
+    if (handle->cml.inputFormat != handle->fmt) {
+        /* PreP setup */
+        if ((ret = VCEncGetPreProcessing(handle->vcEncInst, &preProcCfg)) != VCENC_OK) {
+            MULTI_TRACE_E("VCEncGetPreProcessing() failed. %d", ret);
+            result.is_valid = false;
+            return result;
+        }
+        MULTI_TRACE_E("Get PreP: format %d : rotation %d cc %d : scaling %d\n", preProcCfg.inputType,
+               preProcCfg.rotation, preProcCfg.colorConversion.type, preProcCfg.scaledOutput);
+        preProcCfg.inputType = (VCEncPictureType)handle->cml.inputFormat;
+
+        if ((ret = VCEncSetPreProcessing(handle->vcEncInst, &preProcCfg)) != VCENC_OK) {
+            MULTI_TRACE_E("VCEncSetPreProcessing() failed. %d", ret);
+            result.is_valid = false;
+            return result;
+        }
+        handle->fmt = handle->cml.inputFormat;
+    }
     ret = encode_nal(codec_handle, in_buffer_info, out, (unsigned int*)&dataLength, &videoRet);
     if (ret != 0) {
         Error(2, ERR, "encode_nal() fails");

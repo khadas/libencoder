@@ -76,7 +76,7 @@ int main(int argc, char **argv)
         printf("  framerate\t: framerate \n");
         printf("  bitrate  \t: bit rate \n");
         printf("  num      \t: encode frame count \n");
-        printf("  fmt      \t: encode input fmt 0 : yuv420p(yv12/yu12), 1 : nv12, 2 : nv21, \n");
+        printf("  fmt      \t: encode input fmt 2 : nv12/nv21, 3 : yuv420p(yv12/yu12)\n");
         printf("  buf_type \t: 0:vmalloc, 3:dma buffer\n");
         printf("  num_planes \t: used for dma buffer case. 2 : nv12/nv21, 3 : yuv420p(yv12/yu12)\n");
         printf("  codec_id \t: 4 : h.264, 5 : h.265\n");
