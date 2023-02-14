@@ -116,6 +116,8 @@ typedef struct {
 
 typedef struct {
 	int   seqNum;
+	struct timeval timeFrameStart;
+	struct timeval timeFrameEnd;
 	int   encodeEnd;
 	char  srcfile[ENCODER_STRING_LEN_MAX];    // yuv data url in your root fs
 	char  outfile[ENCODER_STRING_LEN_MAX];    // stream url in your root fs
@@ -193,6 +195,18 @@ static int ParseEncodeCfgFile(FILE *fp, encodecCfgParam *cfg_encode);
 static void *encode_thread(void *param);
 
 #define CFG_ENCODE_NUM_MAX	6
+
+// Helper function to calculate time diffs.
+static unsigned int uTimeDiff(struct timeval end, struct timeval start)
+{
+	return (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_usec - start.tv_usec);
+}
+
+//return timeDiff in u64
+static unsigned long long uTimeDiffLL(struct timeval end, struct timeval start)
+{
+	return (unsigned long long )(end.tv_sec - start.tv_sec) * 1000000 + (unsigned long long )(end.tv_usec - start.tv_usec);
+}
 
 int main(int argc, const char *argv[])
 {
@@ -363,17 +377,7 @@ int main(int argc, const char *argv[])
 		if (i >= CFG_ENCODE_NUM_MAX)
 			break;
 		pthread_create(&tid[i], NULL, encode_thread, &cfg_encode[i]);
-	}
-	for (i = 0; i < cfg_encode[0].seqNum; )	{
-		if (i >= CFG_ENCODE_NUM_MAX)
-			break;
-		while (1) {
-			if (1 == cfg_encode[i].encodeEnd) {
-				i++;
-				break;
-			}
-			usleep(40*1000);
-		}
+		pthread_join(tid[i], NULL);
 	}
 	return 0;
 }
@@ -427,6 +431,9 @@ static void *encode_thread(void *param)
 	int buf_type = 0;
 	int num_planes = 1;
 	struct usr_ctx_s ctx;
+	unsigned int frameWriteTime = 0;
+	unsigned long long totalTime = 0, ioTime = 0;
+	struct timeval timeStart, timeEnd, readStart, readEnd, writeStart, writeEnd;
 
 	int len = 0;
 	unsigned char srcfile[ENCODER_STRING_LEN_MAX] = {0};
@@ -993,8 +1000,10 @@ retry:
 		}
 	}
 
+	gettimeofday(&timeStart, NULL);
 	while (num > 0)
 	{
+		gettimeofday(&readStart, NULL);
 		if (conver_stride) { // exmaple of covert normal with stride to cust stride
 			int line;
 			unsigned char *dst;
@@ -1114,6 +1123,9 @@ retry:
 			}
 		}
 		enc_frame_type = FRAME_TYPE_AUTO;
+		gettimeofday(&readEnd, NULL);
+		ioTime += uTimeDiff(readEnd, readStart);
+		gettimeofday(&cfg_encode->timeFrameStart, NULL);
 		if (cfg_upd_enabled && has_cfg_update) {
 			if (cfgChange.FrameNum == frame_num) { // apply updates
 				if (cfgChange.enable_option
@@ -1385,6 +1397,7 @@ retry:
 		    vl_multi_encoder_encode(handle_enc, enc_frame_type,
 					    outbuffer, &inbuf_info, &ret_buf);
 
+		gettimeofday(&writeStart, NULL);
 		if (encoding_metadata.is_valid)
 		{
 			write(outfd, (unsigned char *) outbuffer,
@@ -1394,6 +1407,12 @@ retry:
 			printf("encode error %d!\n",
 			       encoding_metadata.encoded_data_length_in_bytes);
 		}
+		gettimeofday(&writeEnd, NULL);
+		frameWriteTime = uTimeDiff(writeEnd, writeStart);
+		ioTime += frameWriteTime;
+		gettimeofday(&cfg_encode->timeFrameEnd, NULL);
+		//printf("=== Time(us %u HW+SW) ===\n",
+			   //uTimeDiff(cfg_encode->timeFrameEnd, cfg_encode->timeFrameStart) - frameWriteTime);
 		num--;
 		frame_num++;
 		playStat.PrevFrameQP = encoding_metadata.extra.average_qp_value;
@@ -1402,6 +1421,14 @@ retry:
 		if (playStat.cust_ltr_enable) {
 			playStat.GopLTRCounter++;
 		}
+	}
+	gettimeofday(&timeEnd, NULL);
+
+	totalTime = uTimeDiffLL(timeEnd, timeStart);
+	printf("[Total time: %llu us], [IO time: %llu us]\n", totalTime, ioTime);
+	if (frame_num > 1) {
+		printf("[Encode Total time: %llu us], [avgTime: %llu us], [avgfps: %d]\n", totalTime - ioTime,
+			   (totalTime - ioTime) / frame_num, 1*1000*1000/((totalTime - ioTime) / frame_num));
 	}
 
 exit:
