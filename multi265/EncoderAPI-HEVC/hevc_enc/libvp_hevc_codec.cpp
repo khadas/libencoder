@@ -512,6 +512,26 @@ int vl_video_encoder_change_bitrate_hevc(vl_codec_handle_hevc_t codec_handle,
     return 0;
 }
 
+
+int vl_video_encoder_change_framerate_hevc(vl_codec_handle_hevc_t codec_handle,
+                            int frameRate,int bitRate)
+{
+    int ret;
+    AMVHEVCEncHandle *handle = (AMVHEVCEncHandle *)codec_handle;
+
+    if (handle->am_enc_handle == 0) //not init the encoder yet
+        return -1;
+    if (handle->mEncParams.param_change_enable == 0) //no change enabled
+        return -2;
+    ret = AML_HEVCEncChangeFrameRate(handle->am_enc_handle, frameRate, bitRate);
+    if (ret != AMVENC_SUCCESS)
+        return -3;
+    //hist_reset(handle); //bitrate target change reset the hist
+    handle->mEncParams.frame_rate = frameRate;
+    return 0;
+}
+
+
 int vl_video_encoder_destroy_hevc(vl_codec_handle_hevc_t codec_handle) {
     AMVHEVCEncHandle *handle = (AMVHEVCEncHandle *)codec_handle;
     AML_HEVCRelease(handle->am_enc_handle);

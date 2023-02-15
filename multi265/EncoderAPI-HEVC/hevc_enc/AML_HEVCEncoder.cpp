@@ -1169,6 +1169,30 @@ AMVEnc_Status AML_HEVCEncChangeBitRate(amv_enc_handle_hevc_t ctx_handle,
   return AMVENC_SUCCESS;
 }
 
+AMVEnc_Status AML_HEVCEncChangeFrameRate(amv_enc_handle_hevc_t ctx_handle,
+                                int FrameRate,int BitRate)
+{
+  AMVHEVCCtx * ctx = (AMVHEVCCtx* ) ctx_handle;
+  EncChangeParam *ChgParam;
+
+  if (ctx == NULL) return AMVENC_FAIL;
+  if (ctx->magic_num != MULTI_ENC_MAGIC)
+    return AMVENC_FAIL;
+  if (ctx->mInitParams.param_change_enable == 0)
+    return AMVENC_FAIL;
+  VLOG(INFO, "Change frame rate to %d Count %d\n", FrameRate, ctx->changedCount);
+
+  ChgParam = &ctx->changeParam;
+
+  ChgParam->frameRate = FrameRate;
+  ChgParam->bitRate = BitRate;
+  ChgParam->enable_option |= ENC_FRAME_RATE_CHANGE | ENC_RC_TARGET_RATE_CHANGE;
+  ctx->param_change_flag ++;
+
+  return AMVENC_SUCCESS;
+}
+
+
 AMVEnc_Status AML_HEVCEncHeader(amv_enc_handle_hevc_t ctx_handle,
                                 unsigned char* buffer,
                                 unsigned int* buf_nal_size)
