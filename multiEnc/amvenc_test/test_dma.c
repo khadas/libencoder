@@ -48,7 +48,7 @@
 #include <IONmem.h>
 
 
-//#define USE_ION_DMA_BUFF
+#define USE_ION_DMA_BUFF
 
 int create_ctx(struct usr_ctx_s *ctx)
 {

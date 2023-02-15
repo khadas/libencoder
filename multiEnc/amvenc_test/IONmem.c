@@ -163,7 +163,7 @@ int ion_mem_sync_cache(int ion_fd, int shared_fd)
     }
     return 0;
 }
-
+#if 0
 int ion_mem_invalid_cache(int ion_fd, int shared_fd)
 {
     int legacy_ion = 0;
@@ -182,7 +182,7 @@ int ion_mem_invalid_cache(int ion_fd, int shared_fd)
     }
     return 0;
 }
-
+#endif
 void ion_mem_exit(int ion_fd)
 {
     int ret = -1;

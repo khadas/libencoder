@@ -78,6 +78,8 @@ static const char *Gop_string[] = {
 	"IP only 3-frame SVC mode",
 	"IP only 4-frame SVC mode",
 	"IP only customer mode",
+	"reserved",
+	"IP only 5-frame SVC mode",
 };
 
 typedef struct {
@@ -240,7 +242,7 @@ int main(int argc, const char *argv[])
 		printf("            \t\t  bit 1: update control. 0: disabled (default) 1: enabled\n");
 		printf("            \t\t  bit 2 ~ bit 6 encode GOP patttern options:\n");
 		printf("            \t\t\t 0 default(IP) 1:I only    2:IP_only    3: IBBBP\n");
-		printf("            \t\t\t 4:IP_SVC1     5:IP_SVC2   6: IP_SVC3   7: IP_SVC4  8: CUSTP \n");
+		printf("            \t\t\t 4:IP_SVC1     5:IP_SVC2   6: IP_SVC3   7: IP_SVC4  8: CUSTP  10: IP_SVC5\n");
 		printf("            \t\t  bit 7:long term refereces. 0: disabled (default) 1: enabled\n");
 		printf("            \t\t  bit 8:cust source buffer stride . 0: disabled (default) 1: enabled\n");
 		printf("            \t\t  bit 9: convert normal source file stride to cust source stride. 0: disabled (default) 1: enabled\n");
@@ -544,7 +546,7 @@ static void *encode_thread(void *param)
 		printf("frame_rotation=%u, frame_mirroring=%u\n",
 				frame_rotation, frame_mirroring);
 		if (gop_pattern) {
-			if (gop_pattern > 8) {
+			if (gop_pattern > 10) {
 				printf("gop_pattern_is: %d invalid;\n",
 					gop_pattern);
 				goto end;
