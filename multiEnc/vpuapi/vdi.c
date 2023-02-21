@@ -403,11 +403,9 @@ int vdi_release(u32 core_idx)
     }
 
     vdi->task_num--;
-#if !defined(__ANDROID__)
+
     if (vdi->pvip)
         munmap(vdi->pvip, (sizeof(vpu_instance_pool_t) + sizeof(MUTEX_HANDLE) * VDI_NUM_LOCK_HANDLES));
-#else
-#endif
 
 #ifdef AML_FIXED_FOR_GLIBC_2_33
     if (vdi->shared_mutex_map)
