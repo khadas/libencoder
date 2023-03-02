@@ -1311,6 +1311,7 @@ error:
 
 }
 i32 encode_nal(vc_codec_handle_t codec_handle,
+                    vc_frame_type_t type,
                     vc_buffer_info_t *in_buffer_info,
                     unsigned char* buffer,
                     unsigned int* buf_nal_size,
@@ -1429,6 +1430,10 @@ i32 encode_nal(vc_codec_handle_t codec_handle,
     MULTI_TRACE_E("=== Encoding %i %s ...\n", handle->tb.picture_enc_cnt, handle->tb.input);
       pEncIn->externalSEICount = 0;
       pEncIn->pExternalSEI = NULL;
+    if (VC_FRAME_TYPE_IDR == type) {
+        pEncIn->bIsIDR = HANTRO_TRUE;
+        MULTI_TRACE_E("receive IDR frame request!!!!");
+    }
 
     ret = VCEncStrmEncode(handle->vcEncInst, pEncIn, &encOut, &HEVCSliceReady, &handle->tb.sliceCtl);
 
@@ -1490,6 +1495,7 @@ error:
     return encRet;
 }
 vc_encoding_metadata_t vc_encoder_encode(vc_codec_handle_t codec_handle,
+                                           vc_frame_type_t type,
                                            unsigned char* out,
                                            vc_buffer_info_t *in_buffer_info,
                                            vc_buffer_info_t *ret_buffer_info)
@@ -1562,7 +1568,7 @@ vc_encoding_metadata_t vc_encoder_encode(vc_codec_handle_t codec_handle,
         }
         handle->fmt = handle->cml.inputFormat;
     }
-    ret = encode_nal(codec_handle, in_buffer_info, out, (unsigned int*)&dataLength, &videoRet);
+    ret = encode_nal(codec_handle, type, in_buffer_info, out, (unsigned int*)&dataLength, &videoRet);
     if (ret != 0) {
         Error(2, ERR, "encode_nal() fails");
         result.is_valid = false;

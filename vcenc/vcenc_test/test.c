@@ -114,6 +114,7 @@ int encode_main(void *param)
 	unsigned char *outbuffer = NULL;
 	unsigned int framesize = 0;
 	unsigned char *inputBuffer = NULL;
+	enum vc_frame_type_e frame_type = VC_FRAME_TYPE_AUTO;
 	vc_buffer_info_t inbuf_info;
 	vc_buffer_info_t ret_buf;
 	int width, height, gop, framerate, bitrate, num;
@@ -466,7 +467,7 @@ int encode_main(void *param)
         ioTime += uTimeDiff(readEnd, readStart);
         gettimeofday(&cfg_encode->timeFrameStart, NULL);
 		encoding_metadata =
-		    vc_encoder_encode(handle_enc, outbuffer, &inbuf_info, &ret_buf);
+		    vc_encoder_encode(handle_enc, frame_type, outbuffer, &inbuf_info, &ret_buf);
 		gettimeofday(&writeStart, NULL);
 
 		if (encoding_metadata.is_valid)

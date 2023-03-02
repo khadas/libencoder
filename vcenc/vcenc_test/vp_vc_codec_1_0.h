@@ -228,6 +228,7 @@ vc_codec_handle_t vc_encoder_init(vc_codec_id_t codec_id,
  *@return ：if success return encoded data length,else return <= 0
  */
 vc_encoding_metadata_t vc_encoder_encode(vc_codec_handle_t codec_handle,
+                                           vc_frame_type_t type,
                                            unsigned char* out,
                                            vc_buffer_info_t *in_buffer_info,
                                            vc_buffer_info_t *ret_buffer_info);
