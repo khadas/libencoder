@@ -117,7 +117,7 @@ int main(int argc, const char *argv[]){
         }
         num--;
     }
-    vl_video_encoder_destory(handle_enc);
+    vl_video_encoder_destroy(handle_enc);
     close(outfd);
     fclose(fp);
     free(inputBuffer);

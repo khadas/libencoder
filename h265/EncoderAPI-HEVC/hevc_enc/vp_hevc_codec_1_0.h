@@ -80,7 +80,7 @@ extern "C" {
      *@param ：handle: encoder handle
      *@return ：if success return 1,else return 0
      */
-    int vl_video_encoder_destory(vl_codec_handle_t handle);
+    int vl_video_encoder_destroy(vl_codec_handle_t handle);
 
     /**
      * init decoder
