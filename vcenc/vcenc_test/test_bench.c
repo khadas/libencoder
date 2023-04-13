@@ -1161,7 +1161,7 @@ i32 initEncParams(VPMultiEncHandle *handle,
     handle->cml.bitPerSecond = encode_info.bit_rate;
 
     handle->cml.picRc = 1;
-    handle->cml.ctbRc = 2;
+    handle->cml.ctbRc = 1;
     handle->cml.gopSize = 1;
     handle->cml.inputRateNumer = encode_info.frame_rate;
     handle->cml.outputRateNumer = encode_info.frame_rate;

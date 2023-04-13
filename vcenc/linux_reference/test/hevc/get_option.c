@@ -2010,7 +2010,7 @@ void default_parameter(commandLine_s *cml)
     cml->qpMinI = DEFAULT;
     cml->qpMaxI = DEFAULT;
     cml->picRc = DEFAULT;
-    cml->ctbRc = DEFAULT; //CTB_RC
+    cml->ctbRc = 1; //CTB_RC
     cml->cpbSize = DEFAULT;
     cml->bitrateWindow = DEFAULT;
     cml->fixedIntraQp = 0;
@@ -2018,7 +2018,7 @@ void default_parameter(commandLine_s *cml)
     cml->hrdConformance = 0;
     cml->smoothPsnrInGOP = 0;
     cml->vbr = 0;
-    cml->rcMode = VCE_RC_CVBR;
+    cml->rcMode = VCE_RC_CBR;
 
     cml->byteStream = 1;
 

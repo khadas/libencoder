@@ -10012,7 +10012,7 @@ bool_e SetParameter(struct vcenc_instance *inst, const VCEncConfig *pEncCfg)
 
         rc->hrd = ENCHW_NO;
         rc->picRc = ENCHW_NO;
-        rc->ctbRc = 0;
+        rc->ctbRc = 1;
         rc->picSkip = ENCHW_NO;
         rc->vbr = ENCHW_NO;
 
