@@ -63,6 +63,34 @@
 
 #define LARGE_QPFACTOR_FOR_BIGQP
 
+
+#ifdef __ANDROID__
+#define LOG_NDEBUG 0
+#define LOG_TAG "MultiDriver"
+#include <utils/Log.h>
+
+#define APITRACEERR(fmt, ...)                      ALOGE(fmt,##__VA_ARGS__)
+#define APITRACEWRN(fmt, ...)                      ALOGW(fmt,##__VA_ARGS__)
+
+#define APITRACE(fmt, ...)                         ALOGV(fmt,##__VA_ARGS__)
+#define APITRACEPARAM_X(fmt, ...)                  //ALOGE(fmt,##__VA_ARGS__)
+#define APITRACEPARAM(fmt, ...)                    //ALOGE(fmt,##__VA_ARGS__)
+#else
+#define APITRACEERR(fmt, ...)                                                                      \
+    VCEncTraceMsg(NULL, VCENC_LOG_ERROR, VCENC_LOG_TRACE_API, "[%s:%d]" fmt, __FUNCTION__,         \
+                  __LINE__, ##__VA_ARGS__)
+#define APITRACEWRN(fmt, ...)                                                                      \
+    VCEncTraceMsg(NULL, VCENC_LOG_WARN, VCENC_LOG_TRACE_API, "[%s:%d]Warning: " fmt, __FUNCTION__, \
+                  __LINE__, ##__VA_ARGS__)
+#define APITRACE(fmt, ...)                                                                         \
+    VCEncTraceMsg(NULL, VCENC_LOG_INFO, VCENC_LOG_TRACE_API, fmt, ##__VA_ARGS__)
+#define APITRACEPARAM_X(fmt, ...)                                                                  \
+    VCEncTraceMsg(NULL, VCENC_LOG_INFO, VCENC_LOG_TRACE_API, fmt, ##__VA_ARGS__)
+#define APITRACEPARAM(fmt, ...)                                                                    \
+    VCEncTraceMsg(NULL, VCENC_LOG_INFO, VCENC_LOG_TRACE_API, fmt, ##__VA_ARGS__)
+#endif
+
+#if 0
 /* Tracing macro */
 #define APITRACEERR(fmt, ...)                                                                      \
     VCEncTraceMsg(NULL, VCENC_LOG_ERROR, VCENC_LOG_TRACE_API, "[%s:%d]" fmt, __FUNCTION__,         \
@@ -76,7 +104,7 @@
     VCEncTraceMsg(NULL, VCENC_LOG_INFO, VCENC_LOG_TRACE_API, fmt, ##__VA_ARGS__)
 #define APITRACEPARAM(fmt, ...)                                                                    \
     VCEncTraceMsg(NULL, VCENC_LOG_INFO, VCENC_LOG_TRACE_API, fmt, ##__VA_ARGS__)
-
+#endif
 #define APIPRINT(v, ...)                                                                           \
     {                                                                                              \
         if (v)                                                                                     \
