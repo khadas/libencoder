@@ -1559,9 +1559,19 @@ AMVEnc_Status Wave4VpuEncEncPic(AMVHEVCEncHandle *Handle, Uint32 idx, int end, u
         VpuWriteReg(Handle->instance_id, W4_CMD_ENC_SRC_PIC_IDX, idx);
     VpuWriteReg(Handle->instance_id, W4_CMD_ENC_SRC_ADDR_Y, Handle->src_vb[idx].phys_addr);
     VpuWriteReg(Handle->instance_id, W4_CMD_ENC_SRC_ADDR_U, Handle->src_vb[idx].phys_addr + size_src_luma);
-    VpuWriteReg(Handle->instance_id, W4_CMD_ENC_SRC_ADDR_V, Handle->src_vb[idx].phys_addr + size_src_luma);
-    VpuWriteReg(Handle->instance_id, W4_CMD_ENC_SRC_STRIDE, (src_stride << 16) | src_stride);
-    VpuWriteReg(Handle->instance_id, W4_CMD_ENC_SRC_FORMAT, ((2 + Handle->mUvSwap) << 0) | (0 << 3) | (gol_endian << 6));
+    if (Handle->fmt == AMVENC_YUV420) {
+        VpuWriteReg(Handle->instance_id, W4_CMD_ENC_SRC_ADDR_V, Handle->src_vb[idx].phys_addr + size_src_luma + size_src_chroma / 2);
+    } else {//nv12,nv21
+        VpuWriteReg(Handle->instance_id, W4_CMD_ENC_SRC_ADDR_V, Handle->src_vb[idx].phys_addr + size_src_luma);
+    }
+
+    if (Handle->fmt == AMVENC_YUV420) {
+        VpuWriteReg(Handle->instance_id, W4_CMD_ENC_SRC_FORMAT, ((0 << 0) | (0 << 3) | (gol_endian << 6)));
+        VpuWriteReg(Handle->instance_id, W4_CMD_ENC_SRC_STRIDE, (src_stride << 16) | (src_stride / 2));
+    } else {//nv12,nv21
+        VpuWriteReg(Handle->instance_id, W4_CMD_ENC_SRC_FORMAT, (((2 + Handle->mUvSwap) << 0) | (0 << 3) | (gol_endian << 6)));
+        VpuWriteReg(Handle->instance_id, W4_CMD_ENC_SRC_STRIDE, (src_stride << 16) | src_stride);
+    }
 
     VpuWriteReg(Handle->instance_id, W4_CMD_ENC_SEI_USER_ADDR, 0);
     VpuWriteReg(Handle->instance_id, W4_CMD_ENC_SEI_USER_INFO, 0);
@@ -1753,11 +1763,33 @@ AMVEnc_Status AML_HEVCInitialize(AMVHEVCEncHandle *Handle, AMVHEVCEncParams *enc
     return AMVENC_SUCCESS;
 }
 
+void static yuv_plane_memcpy(char *dst, char *src, uint32 width, uint32 height, uint32 stride, bool aligned) {
+    if (dst == NULL || src == NULL) {
+        VLOG(ERR, "yuv_plane_memcpy error ptr\n");
+        return;
+    }
+    if (!aligned) {
+        for (unsigned int i = 0; i < height; i++) {
+            memcpy((void *)dst, (void *)src, width);
+            dst += stride;
+            src += width;
+        }
+    } else {
+        memcpy(dst, (void *)src, stride * height);
+    }
+}
 AMVEnc_Status AML_HEVCSetInput(AMVHEVCEncHandle *Handle, AMVHEVCEncFrameIO *input) {
     Uint32 src_stride;
     Uint32 luma_stride, chroma_stride;
     Uint32 size_src_luma, size_src_chroma;
-    char *y = NULL;
+    char *y_dst = NULL;
+    char *u_dst = NULL;
+    char *v_dst = NULL;
+    char *src = NULL;
+    bool width32alinged = true; //width is multiple of 32 or not
+    if (Handle->enc_width % 32) {
+        width32alinged = false;
+    }
 
     Handle->op_flag = input->op_flag;
     Handle->fmt = input->fmt;
@@ -1824,16 +1856,13 @@ AMVEnc_Status AML_HEVCSetInput(AMVHEVCEncHandle *Handle, AMVHEVCEncFrameIO *inpu
         aml_ge2d_invalid_cache(&amlge2d.ge2dinfo);
         size_src_luma = luma_stride * wave420l_align32(Handle->enc_height);
         size_src_chroma = luma_stride * (wave420l_align16(Handle->enc_height) / 2);
-        y = (char *) Handle->src_vb[Handle->src_idx].virt_addr;
-        if (Handle->enc_width % 32) {
-            for (uint32 i = 0; i < Handle->enc_height; i++) {
-                memcpy(y + i * luma_stride, (void *) ((char *) amlge2d.ge2dinfo.dst_info.vaddr[0] + i * Handle->enc_width), Handle->enc_width);
-            }
-        } else {
-            memcpy((void *)Handle->src_vb[Handle->src_idx].virt_addr, amlge2d.ge2dinfo.dst_info.vaddr[0],  Handle->enc_width * Handle->enc_height);
-        }
-        y = (char *) (Handle->src_vb[Handle->src_idx].virt_addr + size_src_luma);
-        memcpy(y, (void *) ((char *)amlge2d.ge2dinfo.dst_info.vaddr[0] + Handle->enc_width * Handle->enc_height), chroma_stride * Handle->enc_height / 2);
+        y_dst = (char *) Handle->src_vb[Handle->src_idx].virt_addr;
+        src = (char *) amlge2d.ge2dinfo.dst_info.vaddr[0];
+        yuv_plane_memcpy(y_dst, src, Handle->enc_width, Handle->enc_height, luma_stride, width32alinged);
+
+        u_dst = (char *) (Handle->src_vb[Handle->src_idx].virt_addr + size_src_luma);
+        src = (char *)(char *) amlge2d.ge2dinfo.dst_info.vaddr[0] + Handle->enc_width * Handle->enc_height;
+        yuv_plane_memcpy(u_dst, src, Handle->enc_width, Handle->enc_height / 2, chroma_stride, width32alinged);
     } else
 #endif
     {
@@ -1844,22 +1873,21 @@ AMVEnc_Status AML_HEVCSetInput(AMVHEVCEncHandle *Handle, AMVHEVCEncFrameIO *inpu
 
         size_src_chroma = luma_stride * (wave420l_align16(Handle->enc_height) / 2);
 
-        y = (char *) Handle->src_vb[Handle->src_idx].virt_addr;
-        if (Handle->enc_width % 32) {
-            for (unsigned int i = 0; i < Handle->enc_height; i++) {
-                memcpy(y + i * luma_stride, (void *) ((char *) input->YCbCr[0] + i * Handle->enc_width), Handle->enc_width);
-            }
-        } else {
-            memcpy(y, (void *) input->YCbCr[0], luma_stride * Handle->enc_height);
-        }
+        y_dst = (char *) Handle->src_vb[Handle->src_idx].virt_addr;
+        src = (char *) input->YCbCr[0];
+        yuv_plane_memcpy(y_dst, src, Handle->enc_width, Handle->enc_height, luma_stride, width32alinged);
+        if (Handle->fmt == AMVENC_NV12 || Handle->fmt == AMVENC_NV21) {
+            u_dst = (char *)(Handle->src_vb[Handle->src_idx].virt_addr + size_src_luma);
+            src = (char *)input->YCbCr[1];
+            yuv_plane_memcpy(u_dst, src, Handle->enc_width, Handle->enc_height / 2, chroma_stride, width32alinged);
+        } else if (Handle->fmt == AMVENC_YUV420) {
+            u_dst = (char *)(Handle->src_vb[Handle->src_idx].virt_addr + size_src_luma);
+            src = (char *)input->YCbCr[1];
+            yuv_plane_memcpy(u_dst, src, Handle->enc_width / 2, Handle->enc_height / 2, chroma_stride / 2, width32alinged);
 
-        y = (char *) (Handle->src_vb[Handle->src_idx].virt_addr + size_src_luma);
-        if (Handle->enc_width % 32) {
-            for (unsigned int i = 0; i < Handle->enc_height / 2; i++) {
-                memcpy(y + i * chroma_stride, (void *) ((char *) input->YCbCr[1] + i * Handle->enc_width), Handle->enc_width);
-            }
-        } else {
-            memcpy(y, (void *) input->YCbCr[1], chroma_stride * Handle->enc_height / 2);
+            v_dst = (char *)(Handle->src_vb[Handle->src_idx].virt_addr + size_src_luma + size_src_luma / 4);
+            src = (char *)input->YCbCr[2];
+            yuv_plane_memcpy(v_dst, src, Handle->enc_width / 2, Handle->enc_height / 2, chroma_stride / 2, width32alinged);
         }
     }
     flush_memory(Handle->instance_id, &Handle->src_vb[Handle->src_idx]);
