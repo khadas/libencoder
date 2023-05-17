@@ -196,6 +196,21 @@ extern "C" {
 vc_codec_handle_t vc_encoder_init(vc_codec_id_t codec_id,
                                         vc_encode_info_t encode_info);
 
+
+/**
+ * encode header
+ *
+ *@param : handle
+ *@param : buffer       header addr
+ *@param : header_len   header length
+ *img_format: image format
+ *@return : if success return encoder handle,else return <= 0
+ */
+vc_encoding_metadata_t vc_encode_header(vc_codec_handle_t codec_handle,
+                        unsigned char* buffer,
+                        unsigned int* header_len);
+
+
 /**
  * encode video
  *

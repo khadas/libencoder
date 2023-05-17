@@ -1270,6 +1270,7 @@ i32 encode_header(vc_codec_handle_t codec_handle,
     //get output buffer for header.
     if (NOK == GetFreeOutputBuffer(&handle->tb)) {
         Error(2, ERR, "GetFreeOutputBuffer() fails");
+        MULTI_TRACE_E("GetFreeOutputBuffer() fails");
         goto error;
     }
     SetupOutputBuffer(&handle->tb, pEncIn);
@@ -1281,6 +1282,7 @@ i32 encode_header(vc_codec_handle_t codec_handle,
     /* Video, sequence and picture parameter sets */
     if (VCEncStrmStart(handle->vcEncInst, pEncIn, &encOut)) {
         Error(2, ERR, "hevc_set_parameter() fails");
+        MULTI_TRACE_E("hevc_set_parameter() fails");
         goto error;
     }
 
@@ -1292,6 +1294,7 @@ i32 encode_header(vc_codec_handle_t codec_handle,
     //return output buffer for header after VCEncStrmStart.
     if (NOK == ReturnIOBuffer(&handle->tb, &handle->cml, &encOut.consumedAddr, 0)) {
         Error(2, ERR, "Manage IO buffer failed");
+        MULTI_TRACE_E("Manage IO buffer failed");
     }
 
     //VCEncGetRateCtrl(tb->vcEncInst, &rc);
@@ -1304,12 +1307,59 @@ i32 encode_header(vc_codec_handle_t codec_handle,
 error:
     if (encRet != OK) {
         Error(2, ERR, "encode() fails");
+        MULTI_TRACE_E("encode() fails");
         VCEncSetError(handle->vcEncInst);
     }
 
     return encRet;
 
 }
+
+
+vc_encoding_metadata_t vc_encode_header(vc_codec_handle_t codec_handle,
+                        unsigned char* buffer,
+                        unsigned int* header_len)
+{
+    int ret = NOK;
+    vc_encoding_metadata_t result;
+    VPMultiEncHandle* handle = (VPMultiEncHandle *)codec_handle;
+
+    memset(&result, 0, sizeof(vc_encoding_metadata_t));
+    if (NULL == codec_handle) {
+        result.is_valid = false;
+        MULTI_TRACE_E("codec_handle is null,not init first?");
+        return result;
+    }
+    if (NULL == buffer || NULL == header_len) {
+        result.is_valid = false;
+        MULTI_TRACE_E("parameter error,please check!buffer:%p,buf_nal_size:%p",buffer,header_len);
+        return result;
+    }
+
+    if (!handle->mSpsPpsHeaderReceived) {
+        ret = encode_header(codec_handle, buffer, header_len);
+        if (ret == 0) {
+            handle->mSPSPPSDataSize = 0;
+            handle->mSPSPPSData = (char *)malloc(*header_len);
+            if (handle->mSPSPPSData) {
+              handle->mSPSPPSDataSize = *header_len;
+              memcpy(handle->mSPSPPSData, (unsigned char*)buffer,
+                     handle->mSPSPPSDataSize);
+            }
+            handle->mNumInputFrames = 0;
+            handle->mSpsPpsHeaderReceived = true;
+        } else {
+          MULTI_TRACE_E("Encode SPS and PPS error, encoderStatus = %d. handle: %p\n",
+               ret, (void*)handle);
+          result.is_valid = false;
+          return result;
+        }
+    }
+    result.is_valid = true;
+    return result;
+}
+
+
 i32 encode_nal(vc_codec_handle_t codec_handle,
                     vc_frame_type_t type,
                     vc_buffer_info_t *in_buffer_info,
