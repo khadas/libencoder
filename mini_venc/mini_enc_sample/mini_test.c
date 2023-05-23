@@ -12,7 +12,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <stdarg.h>
-#include "mini_vc9000e.h"
+
 #include "mini_vc9000e_parameter.h"
 #include "mini_enc_regs.h"
 #include "mini_memory_pool.h"
@@ -125,6 +125,11 @@ typedef struct venc_ringbuffer
 #define BIT_STREAM_BUF_SIZE 0x400000
 #define ROI_DATA_MAX_SIZE 0x40000
 #define DEVICE_FILENAME "/dev/hantro"
+#define Wr(addr, data) *(volatile unsigned int *)(addr)=(data)
+#define Rd(addr) *(volatile unsigned int *)(addr)
+
+
+//#define RTOS_MINI_SYSTEM
 
 
 #define MAX_CORE_NUM 1
@@ -690,24 +695,35 @@ int mini_system_encoder_init(venc_context_t *context)
 	unsigned int ref_frame_stride_ch = 0;
 	unsigned int ref_ds_luma_stride = 0;
 	unsigned int pgsize = 0;
-
 	unsigned int alignment = 0;
-
 	unsigned int alignment_ch = 0;
-
-
-
+	unsigned int head_size = 0;
 	unsigned int width_4n = 0;
+
 	int i = 0;
+
+
+	vce_vcmd[0] = (void*)vce_vcmd0;
+	vce_vcmd[1] = (void*)vce_vcmd1;
+
+	header = (void*)header_1080p;
+
+	head_size = 0x59;
+#if LOG_PRINTF
+	printf("head_size = 0x%x\n",head_size);
+#endif
+	mini_es_gen_header_dump_init(header,head_size);
+
 
 	alignment = 64;
 	alignment_ch = 64;
 	RefRingBufExtendHeight = 128;
-
 	pgsize = 4096;
 	#if LOG_PRINTF
 	printf("mini_system_encoder_init:\n");
 	#endif
+
+#ifndef RTOS_MINI_SYSTEM
 	//open device
 	fd = open(DEVICE_FILENAME, O_RDWR | O_SYNC);
 	if (fd < 0)
@@ -724,24 +740,34 @@ int mini_system_encoder_init(venc_context_t *context)
 	   printf("ioctl get buffer failed");
 	   return ret;
 	}
+#endif
 
-	/*common_buffer.virt_addr = (ulong)mmap(0,
-			   common_buffer.size,
-			   PROT_READ | PROT_WRITE,
-			   MAP_SHARED,
-			   fd,
-			   common_buffer.phys_addr);*/
-		#if LOG_PRINTF
+
+
+
+#if LOG_PRINTF
 	printf("ioctl get encoder mem buffer start,phys_addr:0x%lx,size:0x%x,mmap virt_addr 0x%lx\n", common_buffer.phys_addr, common_buffer.size, common_buffer.virt_addr);
 #endif
 
-	mini_memalloc_init(common_buffer.phys_addr,common_buffer.size);
 
+#ifdef RTOS_MINI_SYSTEM
+
+	common_buffer.phys_addr = 0; //FIX ME
+
+	common_buffer.size = 0;//FIX ME
+
+#endif
+
+
+
+	mini_memalloc_init(common_buffer.phys_addr,common_buffer.size);
 
 	//hw register phy address
 	hw_regs.phys_addr = reg_base;
-
 	hw_regs.size = HW_REG_SIZE;
+
+
+#ifndef RTOS_MINI_SYSTEM
 
 	hw_regs.virt_addr = (ulong)mmap(0,
 			hw_regs.size,
@@ -753,7 +779,10 @@ int mini_system_encoder_init(venc_context_t *context)
 
 	//remap register base
 	vc9000e_reg_base = hw_regs.virt_addr;
-			#if LOG_PRINTF
+#endif
+
+
+#if LOG_PRINTF
 	printf("ioctl get hw register start,phys_addr:0x%lx,size:0x%x,mmap virt_addr 0x%lx\n", hw_regs.phys_addr ,hw_regs.size , hw_regs.virt_addr);
 #endif
 
@@ -763,16 +792,21 @@ int mini_system_encoder_init(venc_context_t *context)
 
 	/***************************************************************************/
 
-	//vcmd mem
+	//vcmd0 mem
 	vcmd_buffer[0].size = VCMD_MAX_SIZE;
 	ret = AllocMemory(&vcmd_buffer[0].phys_addr,vcmd_buffer[0].size,VENC_VCMD0);
 
-	//vcmd_buffer[0].phys_addr = 0x67565000;
+
 	if (ret != 0)
 	{
 		printf("mini_system_encoder_open:AllocMemory VENC_VCMD0 failed\n");
 		return -1;
 	}
+
+
+
+//dram alloc
+#ifndef RTOS_MINI_SYSTEM
 
 	vcmd_buffer[0].virt_addr = (ulong)mmap(0,
 				vcmd_buffer[0].size,
@@ -780,13 +814,18 @@ int mini_system_encoder_init(venc_context_t *context)
 				MAP_SHARED,
 				fd,
 				vcmd_buffer[0].phys_addr);
-	#if LOG_PRINTF
-	printf("VCMD0 mem mmap phys_addr 0x%lx, virt_addr 0x%lx\n",vcmd_buffer[0].phys_addr,vcmd_buffer[0].virt_addr);
+#endif
 
+
+#if LOG_PRINTF
+	printf("VCMD0 mem mmap phys_addr 0x%lx, virt_addr 0x%lx\n",vcmd_buffer[0].phys_addr,vcmd_buffer[0].virt_addr);
 	printf("#######Here SamSu debug mini system phys dram usage >> vcmd_buffer : size :0x%x,phys_addr:0x%lx\n", vcmd_buffer[0].size,vcmd_buffer[0].phys_addr);
 	Debug_Dram_usage += vcmd_buffer[0].size;
 #endif
-	//vcmd mem
+
+
+
+	//vcmd1 mem
 	vcmd_buffer[1].size = VCMD_MAX_SIZE;
 	ret = AllocMemory(&vcmd_buffer[1].phys_addr,vcmd_buffer[1].size,VENC_VCMD1);
 
@@ -795,20 +834,23 @@ int mini_system_encoder_init(venc_context_t *context)
 		printf("mini_system_encoder_open:AllocMemory VENC_VCMD0 failed\n");
 		return -1;
 	}
+
+#ifndef RTOS_MINI_SYSTEM
 	vcmd_buffer[1].virt_addr = (ulong)mmap(0,
 				vcmd_buffer[1].size,
 				PROT_READ | PROT_WRITE,
 				MAP_SHARED,
 				fd,
 				vcmd_buffer[1].phys_addr);
-		#if LOG_PRINTF
+#endif
+
+
+#if LOG_PRINTF
 	printf("VCMD1 mem mmap phys_addr0 0x%lx, virt_addr0 0x%lx\n",vcmd_buffer[1].phys_addr,vcmd_buffer[1].virt_addr);
-
-
 	printf("#######Here SamSu debug mini system phys dram usage >> vcmd_buffer : size :0x%x,phys_addr:0x%lx\n", vcmd_buffer[1].size,vcmd_buffer[1].phys_addr);
-	#endif
-	Debug_Dram_usage += vcmd_buffer[1].size;
+#endif
 
+	Debug_Dram_usage += vcmd_buffer[1].size;
 
 
 	/*
@@ -817,9 +859,9 @@ int mini_system_encoder_init(venc_context_t *context)
 	*/
 	for (i = 0; i < 1; i++)
 	{
-			#if LOG_PRINTF
+#if LOG_PRINTF
 		printf("mem debug >> compress_coeff_SCAN\n");
-			#endif
+#endif
 		compress_coeff_SCAN[i].size =  288 * 1024 / 8;
 		ret = AllocMemory(&compress_coeff_SCAN[i].phys_addr ,compress_coeff_SCAN[i].size,COEFF_SCAN);
 		if (ret != 0)
@@ -829,9 +871,10 @@ int mini_system_encoder_init(venc_context_t *context)
 		}
 	}
 
-	#if LOG_PRINTF
+#if LOG_PRINTF
 	printf("#######Here SamSu debug mini system phys dram usage >> compress_coeff_SCAN : size :0x%x,phys_addr:0x%lx\n",compress_coeff_SCAN[0].size,compress_coeff_SCAN[0].phys_addr);
 #endif
+
 	Debug_Dram_usage += compress_coeff_SCAN[0].size;
 
 	////////////////////////////////////////////////////////////////////////////////////////
@@ -858,7 +901,7 @@ int mini_system_encoder_init(venc_context_t *context)
 	lumaBufSize = lumaSize + RefRingBufExtendHeight *  ref_frame_stride /4;
 	chromaBufSize = chromaSize + RefRingBufExtendHeight/2 * ref_frame_stride_ch /4;
 	lumaBufSize4N = lumaSize4N + RefRingBufExtendHeight/4 *ref_ds_luma_stride /4;
-	#if LOG_PRINTF
+#if LOG_PRINTF
 	printf("mem debug >> ringbuffer:lumaBufSize = %d,chromaBufSize = %d,lumaBufSize4N = %d,alignment = %d,alignment_ch = %d\n",lumaBufSize,chromaBufSize,lumaBufSize4N,alignment,alignment_ch);
 	printf("mem debug >> ringbuffer:lumaSize = %d,chromaSize = %d,lumaSize4N = %d,RefRingBufExtendHeight = %ds\n",lumaSize,chromaSize,lumaSize4N,RefRingBufExtendHeight);
 	printf("mem debug >> ringbuffer:ref_frame_stride = %d,ref_frame_stride_ch = %d,ref_ds_luma_stride = %d\n",ref_frame_stride, ref_frame_stride_ch,ref_ds_luma_stride);
@@ -875,23 +918,28 @@ int mini_system_encoder_init(venc_context_t *context)
 		return -1;
 	}
 
+#ifndef RTOS_MINI_SYSTEM
 	recon_buffer[0].virt_addr = (ulong)mmap(0,
 				 recon_buffer[0].size,
 				 PROT_READ | PROT_WRITE,
 				 MAP_SHARED,
 				 fd,
 				 recon_buffer[0].phys_addr);
+#endif
 
-
-		#if LOG_PRINTF
+#if LOG_PRINTF
 	printf("#######Here SamSu debug mini system phys dram usage >> recon_buffer : size :0x%x,phys_addr:0x%lx\n",recon_buffer[0].size,recon_buffer[0].phys_addr);
-	#endif
+#endif
+
 	Debug_Dram_usage += recon_buffer[0].size;
 
-	//recon_buffer[0].phys_addr =	0x67ad3000;
-		#if LOG_PRINTF
+
+#if LOG_PRINTF
 	printf("recon_buffer mmap phys_addr 0x%lx, virt_addr 0x%lx\n",recon_buffer[0].phys_addr,recon_buffer[0].virt_addr);
-		#endif
+#endif
+
+
+
 	mini_sys_ringbuffer.refRingBufExtendHeight = RefRingBufExtendHeight;
 	mini_sys_ringbuffer.refRingBuf_luma_size   = lumaBufSize;
 	mini_sys_ringbuffer.refRingBuf_chroma_size = chromaBufSize;
@@ -949,17 +997,23 @@ int mini_system_encoder_init(venc_context_t *context)
 		return -1;
 	}
 
+#ifndef RTOS_MINI_SYSTEM
+
 	bitstream_buffer[0].virt_addr = (ulong)mmap(0,
 				  bitstream_buffer[0].size,
 				  PROT_READ | PROT_WRITE,
 				  MAP_SHARED,
 				  fd,
 				  bitstream_buffer[0].phys_addr);
-	#if LOG_PRINTF
+	memset((void*)bitstream_buffer[0].virt_addr,0,BIT_STREAM_BUF_SIZE);
+
+#endif
+
+
+#if LOG_PRINTF
 	printf("bitstream_buffer mmap phys_addr0 0x%lx, virt_addr 0x%lx\n",bitstream_buffer[0].phys_addr,bitstream_buffer[0].virt_addr);
 
 #endif
-	memset((void*)bitstream_buffer[0].virt_addr,0,BIT_STREAM_BUF_SIZE);
 
 		#if LOG_PRINTF
 	printf("#######Here SamSu debug mini system phys dram usage >> bitstream_buffer : size :0x%x,phys_addr:0x%lx\n",bitstream_buffer[0].size,bitstream_buffer[0].phys_addr);
@@ -982,14 +1036,18 @@ int mini_system_encoder_init(venc_context_t *context)
 		return -1;
 	}
 
+#ifndef RTOS_MINI_SYSTEM
+
 	raw_data.virt_addr = (ulong)mmap(0,
 				raw_data.size,
 				PROT_READ | PROT_WRITE,
 				MAP_SHARED,
 				fd,
 				raw_data.phys_addr);
+#endif
 
-	#if LOG_PRINTF
+
+#if LOG_PRINTF
 	printf("raw_data mmap phys_addr 0x%lx, virt_addr 0x%lx , size = 0x%x\n",raw_data.phys_addr,raw_data.virt_addr,raw_data.size);
 
 #endif
@@ -1058,7 +1116,7 @@ int main(int argc, char *argv[])
 	g_context.gop = 15;
     g_context.quality = 26;
 
-	#if LOG_PRINTF
+#if LOG_PRINTF
     printf("======================================================\n");
     printf("****************** mini system encoder ******************\n");
     printf("width: %d\n", g_context.width);
@@ -1075,20 +1133,7 @@ int main(int argc, char *argv[])
     printf("======================================================\n");
 #endif
 
-	vce_vcmd[0] = (void*)vce_vcmd0;
-
-	vce_vcmd[1] = (void*)vce_vcmd1;
-
-
 	mini_es_dump_init();
-
-	header = (void*)header_1080p;
-
-	head_size = 0x59;
-	#if LOG_PRINTF
-	printf("head_size = 0x%x\n",head_size);
-	#endif
-	mini_es_gen_header_dump_init(header,head_size);
 
 
 #if  0
@@ -1106,7 +1151,7 @@ int main(int argc, char *argv[])
     }
 #if LOG_PRINTF
 	printf("mini_system_encoder_init Done, ret %d\n", ret);
-	#endif
+#endif
 	//get YUV file
 
     fp = fopen("/data/Traffic_1080p_5_nv12.yuv", "r+");
