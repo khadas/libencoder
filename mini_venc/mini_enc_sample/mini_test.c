@@ -132,10 +132,16 @@ typedef struct venc_ringbuffer
 //#define RTOS_MINI_SYSTEM
 
 
+#define WRAP_RESET_CTL 0xfe002004
+#define WRAP_RESET_SEL 0xfe096000
+#define WRAP_CLOCK_CTL 0xfe00019c
+#define HW_VCMD_BASE   0xfe310000
+#define HW_CORE_BASE   0xfe311000
+#define HW_RESET_CTL   0xfe310040
 #define MAX_CORE_NUM 1
 
 #define DEBUG_REG 0
-#define LOG_PRINTF 0
+#define LOG_PRINTF 1
 
 extern unsigned int header_1080p[];
 
@@ -147,7 +153,6 @@ extern unsigned int vce_vcmd1[];
 //extern unsigned int vce_input_raw_data_frm2[];
 #define VCMD_REG_BASE 0xfe310000
 
-unsigned long reg_base = VCMD_REG_BASE;
 int fd;
 
 
@@ -324,18 +329,17 @@ void CompressTableSize(unsigned int compressor, unsigned int width, unsigned int
 
 
 
-void vce_frame_start(venc_context_t *context,int frm_num,venc_ringbuffer_t * mini_sys_ringbuffer)
+void vce_frame_start(venc_context_t *context,int frm_num,venc_ringbuffer_t * mini_sys_ringbuffer,unsigned int source_address)
 {
 	unsigned int Luma_addr = 0;
 	unsigned int Cb_addr = 0;
 	unsigned int Cr_addr = 0;
 
-
+	Luma_addr = source_address;
 
     if (frm_num == 0)// I frame
     {
 
-		Luma_addr = raw_data.phys_addr  ;
 		Cb_addr = Luma_addr + context->stride_width * context->height;
 		Cr_addr =Luma_addr + context->stride_width * context->height + context->stride_width * context->height / 2;
 		#if LOG_PRINTF
@@ -391,7 +395,6 @@ void vce_frame_start(venc_context_t *context,int frm_num,venc_ringbuffer_t * min
     else
 	{
 
-		Luma_addr = raw_data.phys_addr + g_context.stride_width * g_context.height * 3 / 2 * 0;
 		Cb_addr = Luma_addr + context->stride_width * context->height;
 		Cr_addr =Luma_addr + context->stride_width * context->height + context->stride_width * context->height / 2;
 		//printf("vce_frame_start >> frm_num %d,Luma_addr = 0x%x\n",frm_num,Luma_addr);
@@ -592,21 +595,23 @@ void vce_stream_dump(unsigned int frm_num)
 
 FILE *es_bitstream;
 
-void mini_es_dump_init(void)
+int mini_es_dump_init(void)
 {
+	int ret = 0;
 	char name[80];
 	sprintf(name, "/data/bin/es.bin");
 	es_bitstream = fopen(name, "wb");
 	if (es_bitstream == NULL)
 	{
+		ret = -1;
 		printf("open bitstream file failed");
-		return;
+		return ret;
 	}
+	return ret;
 }
 
 void mini_es_gen_header_dump_init(void *header,int head_size)
 {
-	char name[80];
 
 	fwrite((void*)header, head_size, 1, es_bitstream);
 	#if LOG_PRINTF
@@ -702,6 +707,9 @@ int mini_system_encoder_init(venc_context_t *context)
 
 	int i = 0;
 
+#if LOG_PRINTF
+	printf("mini_system_encoder_init:\n");
+#endif
 
 	vce_vcmd[0] = (void*)vce_vcmd0;
 	vce_vcmd[1] = (void*)vce_vcmd1;
@@ -719,9 +727,7 @@ int mini_system_encoder_init(venc_context_t *context)
 	alignment_ch = 64;
 	RefRingBufExtendHeight = 128;
 	pgsize = 4096;
-	#if LOG_PRINTF
-	printf("mini_system_encoder_init:\n");
-	#endif
+
 
 #ifndef RTOS_MINI_SYSTEM
 	//open device
@@ -746,7 +752,7 @@ int mini_system_encoder_init(venc_context_t *context)
 
 
 #if LOG_PRINTF
-	printf("ioctl get encoder mem buffer start,phys_addr:0x%lx,size:0x%x,mmap virt_addr 0x%lx\n", common_buffer.phys_addr, common_buffer.size, common_buffer.virt_addr);
+	//printf("ioctl get encoder mem buffer start,phys_addr:0x%lx,size:0x%x,mmap virt_addr 0x%lx\n", common_buffer.phys_addr, common_buffer.size, common_buffer.virt_addr);
 #endif
 
 
@@ -763,9 +769,9 @@ int mini_system_encoder_init(venc_context_t *context)
 	mini_memalloc_init(common_buffer.phys_addr,common_buffer.size);
 
 	//hw register phy address
-	hw_regs.phys_addr = reg_base;
+	hw_regs.phys_addr = VCMD_REG_BASE;
 	hw_regs.size = HW_REG_SIZE;
-
+	vc9000e_reg_base = hw_regs.phys_addr;
 
 #ifndef RTOS_MINI_SYSTEM
 
@@ -1044,6 +1050,7 @@ int mini_system_encoder_init(venc_context_t *context)
 				MAP_SHARED,
 				fd,
 				raw_data.phys_addr);
+	memset((void*)raw_data.virt_addr,0, g_context.stride_width * g_context.height * 3 / 2*raw_data_number);
 #endif
 
 
@@ -1063,28 +1070,20 @@ int mini_system_encoder_init(venc_context_t *context)
 
 int mini_system_encoder_open(venc_context_t *context,int cmd_index)
 {
-	int ret;
-
-	unsigned long Cr_addr = 0;
-	unsigned int targetPicSize = 0;
-	#if LOG_PRINTF
-	printf("mini_system_encoder_open:\n");
-	#endif
-    Wr(VC9000E_VCMD_SWREG017,  0xffffffff);    // Interrupt status/clr
-    Wr(VC9000E_VCMD_SWREG018,  0x0000003f);
-    Wr(VC9000E_VCMD_SWREG023,  0x00100000);    // [31:28] axi_endian; [23:16] axi_burst_len; [15:8] axi_id_rd; [7:0] axi_id_wr
-    Wr(VC9000E_VCMD_SWREG025,  0x00000004);    // [15:0] abn_intr_gate; [31:16] norm_intr_gate
+	int ret = 0;
+#ifndef	RTOS_MINI_SYSTEM
 	memcpy((void*)vcmd_buffer[0].virt_addr, vce_vcmd[0], VCMD_MAX_SIZE);
 	memcpy((void*)vcmd_buffer[1].virt_addr, vce_vcmd[1], VCMD_MAX_SIZE);
-
-
-
-    Wr(VC9000E_VCMD_SWREG024, 0x00000001);  // sw_rdy_cmdbuf_count
-    Wr(VC9000E_VCMD_SWREG020,  vcmd_buffer[0].phys_addr);    // cmdbuf_start_addr_lsb
-    Wr(VC9000E_VCMD_SWREG021,  0x00000000);    // cmdbuf_start_addr_msb
-    Wr(VC9000E_VCMD_SWREG022,  0x106);  // cmdbuf_size_in_64bit
-
-	return 0;
+#endif
+	Wr(VC9000E_VCMD_SWREG017, 0xffffffff);//Interrupt status/clr
+	Wr(VC9000E_VCMD_SWREG018, 0x0000003f);
+	Wr(VC9000E_VCMD_SWREG023, 0x00100000);//[31:28] axi_endian; [23:16] axi_burst_len; [15:8] axi_id_rd; [7:0] axi_id_wr
+	Wr(VC9000E_VCMD_SWREG025, 0x00000004);//[15:0] abn_intr_gate; [31:16] norm_intr_gate
+	Wr(VC9000E_VCMD_SWREG024, 0x00000001);//sw_rdy_cmdbuf_count
+	Wr(VC9000E_VCMD_SWREG020, vcmd_buffer[0].phys_addr);// cmdbuf_start_addr_lsb
+	Wr(VC9000E_VCMD_SWREG021, 0x00000000);// cmdbuf_start_addr_msb
+	Wr(VC9000E_VCMD_SWREG022, 0x106);//cmdbuf_size_in_64bit
+	return ret;
 }
 
 
@@ -1103,10 +1102,15 @@ int main(int argc, char *argv[])
 	FILE *fp = NULL;
 
 	int encoded_frame_num = 0;
-
+#ifdef	RTOS_MINI_SYSTEM
+	*(volatile unsigned int *)(WRAP_RESET_CTL)=0x2c0000;
+	*(volatile unsigned int *)(WRAP_RESET_SEL)=0;
+	*(volatile unsigned int *)(HW_RESET_CTL)=2;
+	*(volatile unsigned int *)(WRAP_CLOCK_CTL)=0x6000400;
+	*(volatile unsigned int *)(WRAP_CLOCK_CTL)=0x7000500;
+#endif
 	raw_data_number = 1;
 	encoded_frame_num = 5;
-
 	memset(&g_context,0,sizeof(venc_context_t));
     g_context.width =1920;
     g_context.height = 1080;
@@ -1115,7 +1119,6 @@ int main(int argc, char *argv[])
     g_context.fps = 15;
 	g_context.gop = 15;
     g_context.quality = 26;
-
 #if LOG_PRINTF
     printf("======================================================\n");
     printf("****************** mini system encoder ******************\n");
@@ -1132,83 +1135,55 @@ int main(int argc, char *argv[])
 	printf("qpMinI: %d\n", g_context.qpMinI);
     printf("======================================================\n");
 #endif
-
-	mini_es_dump_init();
-
-
 #if  0
 	EncTraceRegs((void*)0,1,0,vce_vcmd[0]);
 	EncTraceRegs((void*)0,1,0,vce_vcmd[1]);
-
 #endif
-
-
-    ret = mini_system_encoder_init(&g_context);
-    if (0 != ret)
+#ifndef	RTOS_MINI_SYSTEM
+	mini_es_dump_init();
+	fp = fopen("/data/Traffic_1080p_5_nv12.yuv","r+");
+	if (fp == NULL) {
+		printf("Open yuv file failed!\n");
+		return -1;
+	}
+	fseek(fp,0,SEEK_END);
+	filesize = ftell(fp);
+	rewind(fp);
+#if LOG_PRINTF
+	printf("read YUV DONE\n");
+#endif
+#endif
+	ret = mini_system_encoder_init(&g_context);
+	if (0 != ret)
 	{
-        printf("vmini_system_encoder_init failed, ret %d", ret);
-        return ret;
-    }
+		printf("vmini_system_encoder_init failed, ret %d", ret);
+		return ret;
+	}
+
 #if LOG_PRINTF
 	printf("mini_system_encoder_init Done, ret %d\n", ret);
 #endif
-	//get YUV file
-
-    fp = fopen("/data/Traffic_1080p_5_nv12.yuv", "r+");
-    if (fp == NULL) {
-        printf("Open yuv file failed!\n");
-        return -1;
-    }
-
-    fseek(fp, 0, SEEK_END);
-    filesize = ftell(fp);
-    rewind(fp);
-
-	memset((void*)raw_data.virt_addr,0, g_context.stride_width * g_context.height * 3 / 2*raw_data_number);
-
-#if LOG_PRINTF
-	printf("read YUV DONE\n");
-	#endif
-	//end
-
-	//mini_RingBuffer_Update(&g_context,0, &mini_sys_ringbuffer);
-	//return 0;
-
-
-    ret = mini_system_encoder_open(&g_context,0);
-    if (0 != ret)
+	ret = mini_system_encoder_open(&g_context,0);
+	//start encoding
+	for (j=0;j<encoded_frame_num;j++)
 	{
-        printf("mini_system_encoder_open failed, ret %d", ret);
-        return ret;
-    }
-
-
-	//start encode
-
-	for (j=0;j<encoded_frame_num;j++) {
-
+#ifndef	RTOS_MINI_SYSTEM
 		fread((void*)raw_data.virt_addr, g_context.stride_width * g_context.height * 3 / 2, 1, fp);
-
+#endif
 		mini_RingBuffer_Update(&g_context,j, &mini_sys_ringbuffer);
-
-
-
-		vce_frame_start(&g_context,j,&mini_sys_ringbuffer);
+		vce_frame_start(&g_context,j,&mini_sys_ringbuffer,raw_data.phys_addr);
 		for (i=0;i<50000000;i++) {
 			;//for delay
 		}
 		mini_es_dump(0);
-#if  0
-
-		EncTraceRegs((void*)0,1,0,vcmd_buffer[1].virt_addr
-
+#if 0
+	EncTraceRegs((void*)0,1,0,vcmd_buffer[1].virt_addr);
 #endif
 	}
-
+#ifndef	RTOS_MINI_SYSTEM
 	fclose(fp);
-
 	vce_es_dump_close();
+#endif
 	return 0;
-
 }
 
