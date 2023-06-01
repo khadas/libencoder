@@ -140,7 +140,7 @@ typedef struct venc_ringbuffer
 #define HW_RESET_CTL   0xfe310040
 #define MAX_CORE_NUM 1
 
-#define DEBUG_REG 0
+#define DEBUG_REG 1
 #define LOG_PRINTF 1
 
 extern unsigned int header_1080p[];

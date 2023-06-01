@@ -26,7 +26,7 @@ MINI_ENC += mini_memory_pool.c
 
 DATA += vce_vcmd0.bin
 DATA += vce_vcmd1.bin
-DATA += header_1080p.bin
+DATA += header_2560p.bin
 
 #DATA += vce_vcmd2.bin
 #DATA += vce_input_raw_data_frm0.bin
