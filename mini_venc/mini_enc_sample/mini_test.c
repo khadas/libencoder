@@ -144,6 +144,7 @@ typedef struct venc_ringbuffer
 #define LOG_PRINTF 1
 
 extern unsigned int header_1080p[];
+extern unsigned int header_2560p[];
 
 extern unsigned int vce_vcmd0[];
 extern unsigned int vce_vcmd1[];
@@ -345,6 +346,32 @@ void vce_frame_start(venc_context_t *context,int frm_num,venc_ringbuffer_t * min
 		#if LOG_PRINTF
 		printf("vce_frame_start >> frm_num %d,Luma_addr = 0x%x\n",frm_num,Luma_addr);
 		#endif
+#if 1
+		//5.15
+		//0x14
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_PIC_WIDTH,context->width>>3);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_PIC_HEIGHT,context->height>>3);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_FRAME_CODING_TYPE,1);
+		//end
+		//0x98
+		//EncAsicSetRegisterValue((u32*)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_INPUT_FORMAT,1);// 0:420  1:n12
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_ROWLENGTH,context->width);
+		//end
+		//0x3b4
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_REF_CH_STRIDE,context->width<<2);// 0:420  1:n12
+		//end
+		//0x414
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_TILEWIDTHIN8,context->width>>3);// 0:420  1:n12
+		//end
+		//0x350
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_REF_LU_STRIDE,context->width<<2);// 0:420  1:n12
+		//0x354
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_REF_DS_LU_STRIDE,context->width);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_TARGETPICSIZE,0x005d9671);// 0:420  1:n12
+
+#endif
+
+
 		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_INPUT_Y_BASE,Luma_addr);
 		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_INPUT_CB_BASE,Cb_addr);
 		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_INPUT_CR_BASE,Cr_addr);
@@ -356,14 +383,11 @@ void vce_frame_start(venc_context_t *context,int frm_num,venc_ringbuffer_t * min
 		//0=YUV420P/1=YUV420SP/2=YUYV422/3=UYVY422/4
 		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_INPUT_FORMAT,1);
 
-		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_NEXT_CMD_LENGTH, 0xcc000106);
-		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_NEXT_CMD_ADDR_L, vcmd_buffer[1].phys_addr);
-		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_NEXT_CMD_BUF_ID, 0x2);
 
 		//sam add
 		#if 1
 		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_RECON_LUMA_COMPRESS_TABLE_BASE, mini_sys_ringbuffer->compressTbl_phys_luma_addr0);
-		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_RECON_CHROMA_COMPRESS_TABLE_BASE,mini_sys_ringbuffer->compressTbl_phys_chroma_addr0 );
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_RECON_CHROMA_COMPRESS_TABLE_BASE,mini_sys_ringbuffer->compressTbl_phys_chroma_addr0);
 		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_L0_REF0_LUMA_COMPRESS_TABLE_BASE, 0x0);
 		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_L0_REF0_CHROMA_COMPRESS_TABLE_BASE, 0x0);
 
@@ -389,6 +413,11 @@ void vce_frame_start(venc_context_t *context,int frm_num,venc_ringbuffer_t * min
 		//sw_enc_ref_ringbuf_luma_4n_rd_offset
 		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_REFPIC_RECON_L0_4N0_BASE,mini_sys_ringbuffer->refRingBuf_4n_rd_offset);
 		//end
+
+
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_NEXT_CMD_LENGTH, 0xcc000106);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_NEXT_CMD_ADDR_L, vcmd_buffer[1].phys_addr);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_NEXT_CMD_BUF_ID, 0x2);
 		#endif
 		Wr(VC9000E_VCMD_SWREG016, 0x00000021);  //[0]vcmd_start_trigger
     }
@@ -397,11 +426,34 @@ void vce_frame_start(venc_context_t *context,int frm_num,venc_ringbuffer_t * min
 
 		Cb_addr = Luma_addr + context->stride_width * context->height;
 		Cr_addr =Luma_addr + context->stride_width * context->height + context->stride_width * context->height / 2;
+#if 1
+		//5.15
+		//0x14
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_PIC_WIDTH,context->width>>3);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_PIC_HEIGHT,context->height>>3);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_FRAME_CODING_TYPE,0);
+		//end
+
+		//0x98
+		//EncAsicSetRegisterValue((u32*)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_INPUT_FORMAT,1);   // 0:420	1:n12
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_ROWLENGTH,context->width);
+		//end
+
+		//0x350
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_REF_LU_STRIDE,context->width<<2);	// 0:420  1:n12
+
+		//0x354
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_REF_DS_LU_STRIDE,context->width );
+
+		//0x3b4
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_REF_CH_STRIDE,context->width<<2);	// 0:420  1:n12
+		//end
+		//0x414
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_TILEWIDTHIN8,context->width>>3);// 0:420  1:n12
+		//end
+#endif
 		//printf("vce_frame_start >> frm_num %d,Luma_addr = 0x%x\n",frm_num,Luma_addr);
-
-
 		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_POC,frm_num);
-
 		//In source
 		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_INPUT_Y_BASE,Luma_addr);
 		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_INPUT_CB_BASE,Cb_addr);
@@ -409,12 +461,9 @@ void vce_frame_start(venc_context_t *context,int frm_num,venc_ringbuffer_t * min
 
 		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_INPUT_LU_STRIDE,context->stride_width);
 		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_INPUT_CH_STRIDE,context->stride_width);
-
 		//out
 		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_OUTPUT_STRM_BASE,bitstream_buffer[0].phys_addr);
 		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_INPUT_FORMAT,1);
-
-
 
 		//hw table
 		if (frm_num%2)
@@ -714,7 +763,7 @@ int mini_system_encoder_init(venc_context_t *context)
 	vce_vcmd[0] = (void*)vce_vcmd0;
 	vce_vcmd[1] = (void*)vce_vcmd1;
 
-	header = (void*)header_1080p;
+	header = (void*)header_2560p;
 
 	head_size = 0x59;
 #if LOG_PRINTF
@@ -1112,28 +1161,28 @@ int main(int argc, char *argv[])
 	raw_data_number = 1;
 	encoded_frame_num = 5;
 	memset(&g_context,0,sizeof(venc_context_t));
-    g_context.width =1920;
-    g_context.height = 1080;
-	g_context.stride_width = 1920;
-    g_context.encType = 1;
-    g_context.fps = 15;
+	g_context.width =2560;
+	g_context.height = 1440;
+	g_context.stride_width = 2560;
+	g_context.encType = 1;
+	g_context.fps = 15;
 	g_context.gop = 15;
-    g_context.quality = 26;
+	g_context.quality = 26;
 #if LOG_PRINTF
-    printf("======================================================\n");
-    printf("****************** mini system encoder ******************\n");
-    printf("width: %d\n", g_context.width);
-    printf("height: %d\n", g_context.height);
-    printf("stride_width: %d\n", g_context.stride_width);
-    printf("type: %s\n", g_context.encType == 96 ? "H.264" : g_context.encType == 265 ? "H.265" : g_context.encType == 26 ? "JPEG": "unknown");
-    printf("fps: %d\n", g_context.fps);
-    printf("gop: %d\n", g_context.gop);
-    printf("bitrate/quality: %d\n", g_context.quality);
+	printf("======================================================\n");
+	printf("****************** mini system encoder ******************\n");
+	printf("width: %d\n", g_context.width);
+	printf("height: %d\n", g_context.height);
+	printf("stride_width: %d\n", g_context.stride_width);
+	printf("type: %s\n", g_context.encType == 96 ? "H.264" : g_context.encType == 265 ? "H.265" : g_context.encType == 26 ? "JPEG": "unknown");
+	printf("fps: %d\n", g_context.fps);
+	printf("gop: %d\n", g_context.gop);
+	printf("bitrate/quality: %d\n", g_context.quality);
 	printf("qpMaxP: %d\n", g_context.qpMaxP);
 	printf("qpMaxI: %d\n", g_context.qpMaxI);
 	printf("qpMinP: %d\n", g_context.qpMinP);
 	printf("qpMinI: %d\n", g_context.qpMinI);
-    printf("======================================================\n");
+	printf("======================================================\n");
 #endif
 #if  0
 	EncTraceRegs((void*)0,1,0,vce_vcmd[0]);
@@ -1141,7 +1190,7 @@ int main(int argc, char *argv[])
 #endif
 #ifndef	RTOS_MINI_SYSTEM
 	mini_es_dump_init();
-	fp = fopen("/data/Traffic_1080p_5_nv12.yuv","r+");
+	fp = fopen("/data/ParkScene_2560_nv12_3.yuv","r+");
 	if (fp == NULL) {
 		printf("Open yuv file failed!\n");
 		return -1;
