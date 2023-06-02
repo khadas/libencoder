@@ -57,5 +57,5 @@ clean:
 CREATE_DIR:
 	-mkdir -p $(OBJDIR)
 
-obj/%.o: %.c
+obj/%.o: %.c CREATE_DIR
 	$(CC) $(CFLAGS) -Wall -c $< -o $@ -MD -MF $(@:.o=.dep)

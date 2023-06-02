@@ -92,7 +92,7 @@ all: CREATE_DIR $(OBJECTPATHS)
 CREATE_DIR:
 	-mkdir -p $(OBJDIR)
 
-$(OBJDIR)/%.o: %.c
+$(OBJDIR)/%.o: %.c CREATE_DIR
 	$(CC) $(CFLAGS) -Wall -c $< -o $@ -MD -MF $(@:.o=.dep)
 
 clean: 
