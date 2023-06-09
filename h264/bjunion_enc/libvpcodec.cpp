@@ -308,6 +308,7 @@ int vl_video_encoder_encode(vl_codec_handle_t codec_handle, vl_frame_type_t fram
     size_t rawdata_size = in_size;
     ssize_t io_ret;
     uint32_t is_DMA_buffer = 0;
+    float avgqp;
     AMVEncHandle *handle = (AMVEncHandle *)codec_handle;
     if (!handle->mSpsPpsHeaderReceived)
     {
@@ -536,6 +537,12 @@ int vl_video_encoder_encode(vl_codec_handle_t codec_handle, vl_frame_type_t fram
         {
             LOGAPI("encoderStatus = %d at line %d, handle: %p", ret , __LINE__, (void *)handle);
             return -1;
+        }
+
+        ret = AML_HWGetAvgQp(handle, &avgqp);
+        if (ret != AMVENC_SUCCESS)
+        {
+            LOGAPI("get avgqp fail! ret = %d at line %d, handle: %p", ret, __LINE__, (void *)handle);
         }
     }
 

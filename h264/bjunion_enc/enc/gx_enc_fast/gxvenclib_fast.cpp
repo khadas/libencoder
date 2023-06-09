@@ -1819,6 +1819,7 @@ void* GxInitFastEncode(int fd, amvenc_initpara_t* init_para) {
     p->pps_len = 0;
     p->gotPPS = false;
     p->fix_qp = -1;
+    p->avg_qp = -1;
     p->nr_mode = 3;
     p->cabac_mode = false;
     p->bitrate_urgent_cnt = 0;
@@ -2049,6 +2050,21 @@ AMVEnc_Status GxFastEncodeSlice(void* dev, unsigned char* outptr, int* datalen) 
             ret = start_intra_two_pass(p, outptr, datalen);
         else
             ret = start_ime_two_pass(p, outptr, datalen);
+    }
+    return ret;
+}
+
+AMVEnc_Status GxFastGetAvgQp(void* dev, float* avgQp) {
+    gx_fast_enc_drv_t* p = (gx_fast_enc_drv_t*) dev;
+    AMVEnc_Status ret = AMVENC_FAIL;
+    if (!p)
+        return ret;
+    if (p->avg_qp > 0) {
+        *avgQp = p->avg_qp;
+        ret = AMVENC_SUCCESS;
+    } else {
+        LOGAPI("get avg_qp fail, p->avg_qp:%d", p->avg_qp);
+        ret = AMVENC_FAIL;
     }
     return ret;
 }

@@ -8,6 +8,7 @@ typedef void* (*AMVencHWFunc_Init)(int fd, amvenc_initpara_t* init_para);
 typedef AMVEnc_Status (*AMVencHWFunc_InitFrame)(void *dev, ulong *yuv, AMVEncBufferType type, AMVEncFrameFmt fmt, bool IDRframe);
 typedef AMVEnc_Status (*AMVencHWFunc_EncodeSPS_PPS)(void *dev, unsigned char* outptr, int* datalen);
 typedef AMVEnc_Status (*AMVencHWFunc_EncodeSlice)(void *dev, unsigned char* outptr, int* datalen);
+typedef AMVEnc_Status (*AMVencHWFunc_GetAvgQp)(void *dev, float *avgQp);
 typedef AMVEnc_Status (*AMVencHWFunc_CommitEncode)(void *dev, bool IDR);
 typedef void (*AMVencHWFunc_Release)(void *dev);
 
@@ -16,6 +17,7 @@ typedef struct tagAMVencHWFuncPtr {
     AMVencHWFunc_InitFrame InitFrame;
     AMVencHWFunc_EncodeSPS_PPS EncodeSPS_PPS;
     AMVencHWFunc_EncodeSlice EncodeSlice;
+    AMVencHWFunc_GetAvgQp GetAvgQp;
     AMVencHWFunc_CommitEncode Commit;
     AMVencHWFunc_Release Release;
 } AMVencHWFuncPtr;
@@ -44,6 +46,7 @@ extern AMVEnc_Status InitAMVEncode(amvenc_hw_t* hw_info, int force_mode);
 extern AMVEnc_Status AMVEncodeInitFrame(amvenc_hw_t* hw_info, ulong *yuv, AMVEncBufferType type, AMVEncFrameFmt fmt, bool IDRframe);
 extern AMVEnc_Status AMVEncodeSPS_PPS(amvenc_hw_t* hw_info, unsigned char* outptr, int* datalen);
 extern AMVEnc_Status AMVEncodeSlice(amvenc_hw_t* hw_info, unsigned char* outptr, int* datalen);
+extern AMVEnc_Status AMVGetAvgQp(amvenc_hw_t *hw_info, float *avgQp);
 extern AMVEnc_Status AMVEncodeCommit(amvenc_hw_t* hw_info, bool IDR);
 extern void UnInitAMVEncode(amvenc_hw_t* hw_info);
 #endif

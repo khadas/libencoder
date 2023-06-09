@@ -316,6 +316,22 @@ AMVEnc_Status AML_HWSetInput(AMVEncHandle *Handle, AMVEncFrameIO *input) {
     return status;
 }
 
+AMVEnc_Status AML_HWGetAvgQp(AMVEncHandle *Handle, float *avgqp) {
+    AMVEnc_Status ret = AMVENC_FAIL;
+    amvenc_info_t* info = (amvenc_info_t*) Handle->object;
+    float avgQp;
+
+    if (info == NULL) {
+        LOGAPI("AML_HWEncNAL Fail: UNINITIALIZED. handle: %p", Handle);
+        return AMVENC_UNINITIALIZED;
+    }
+    ret = AMVGetAvgQp(&info->hw_info, &avgQp);
+    if (ret == AMVENC_SUCCESS) {
+        *avgqp = avgQp;
+    }
+    return ret;
+}
+
 AMVEnc_Status AML_HWEncNAL(AMVEncHandle *Handle, unsigned char *buffer, unsigned int *buf_nal_size, int *nal_type) {
     AMVEnc_Status ret = AMVENC_FAIL;
     amvenc_info_t* info = (amvenc_info_t*) Handle->object;

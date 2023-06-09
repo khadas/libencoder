@@ -160,6 +160,7 @@ typedef struct AMVEncHandle_s {
 
 extern AMVEnc_Status AML_HWEncInitialize(AMVEncHandle *Handle, AMVEncParams *encParam, bool* has_mix, int force_mode);
 extern AMVEnc_Status AML_HWSetInput(AMVEncHandle *Handle, AMVEncFrameIO *input);
+extern AMVEnc_Status AML_HWGetAvgQp(AMVEncHandle *Handle, float *avgqp);
 extern AMVEnc_Status AML_HWEncNAL(AMVEncHandle *Handle, unsigned char *buffer, unsigned int *buf_nal_size, int *nal_type);
 extern AMVEnc_Status AML_HWEncRelease(AMVEncHandle *Handle);
 
