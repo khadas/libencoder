@@ -62,6 +62,7 @@ typedef struct AMVHEVCContext_s {
   uint32 frame_rate; /* frame rate */
   int32 idrPeriod;   /* IDR period in number of frames */
   uint32 op_flag;
+  uint32 averageQP;
 
   uint32 src_num;   /*total src_frame buffer needed */
   uint32 fb_num;    /* total reconstuction  frame buffer encoder needed */
@@ -1235,6 +1236,18 @@ AMVEnc_Status AML_HEVCEncHeader(amv_enc_handle_hevc_t ctx_handle,
 }
 #define VPU_WAIT_TIME_OUT               10  //should be less than normal decoding time to give a chance to fill stream. if this value happens some problem. we should fix VPU_WaitInterrupt function
 
+AMVEnc_Status AML_HEVCEncGetAvgQp(amv_enc_handle_hevc_t ctx_handle, int *avgqp) {
+    AMVEnc_Status ret = AMVENC_FAIL;
+    AMVHEVCCtx *ctx = (AMVHEVCCtx* )ctx_handle;
+
+    if (ctx == NULL) return AMVENC_FAIL;
+    if (ctx->averageQP) {
+        *avgqp = ctx->averageQP;
+        ret = AMVENC_SUCCESS;
+    }
+    return ret;
+}
+
 AMVEnc_Status AML_HEVCEncNAL(amv_enc_handle_hevc_t ctx_handle,
                              unsigned char* buffer,
                              unsigned int* buf_nal_size,
@@ -1314,6 +1327,7 @@ retry_pointB:
         }
         return AMVENC_FAIL;
     }
+    ctx->averageQP = encOutputInfo.avgCtuQp;
 
     DisplayEncodedInformation(ctx->enchandle,
                     ctx->encOpenParam.bitstreamFormat,

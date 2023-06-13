@@ -205,6 +205,7 @@ encoding_metadata_hevc_t vl_video_encoder_encode_hevc(vl_codec_handle_hevc_t han
 
 int vl_video_encoder_change_framerate_hevc(vl_codec_handle_hevc_t codec_handle,
                             int frameRate,int bitRate);
+int vl_video_encoder_getavgqp(vl_codec_handle_hevc_t handle, int *avg_qp);
 
 
 /**

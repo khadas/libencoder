@@ -148,6 +148,7 @@ extern AMVEnc_Status AML_HEVCEncChangeBitRate(amv_enc_handle_hevc_t ctx_handle,
                                 int BitRate);
 extern AMVEnc_Status AML_HEVCEncChangeFrameRate(amv_enc_handle_hevc_t ctx_handle,
                                 int FrameRate,int BitRate);
+extern AMVEnc_Status AML_HEVCEncGetAvgQp(amv_enc_handle_hevc_t ctx_handle, int *avgqp);
 extern AMVEnc_Status AML_HEVCEncNAL(amv_enc_handle_hevc_t ctx_handle,
                              unsigned char* buffer,
                              unsigned int* buf_nal_size,

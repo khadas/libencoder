@@ -512,6 +512,19 @@ int vl_video_encoder_change_bitrate_hevc(vl_codec_handle_hevc_t codec_handle,
     return 0;
 }
 
+int vl_video_encoder_getavgqp(vl_codec_handle_hevc_t codec_handle, int *avg_qp) {
+    int ret;
+    AMVHEVCEncHandle *handle = (AMVHEVCEncHandle *)codec_handle;
+    int avgqp;
+
+    ret = AML_HEVCEncGetAvgQp(handle->am_enc_handle, &avgqp);
+    if (ret == AMVENC_SUCCESS) {
+        *avg_qp = avgqp;
+    } else {
+        VLOG(ERR, "get avgqp fail! ret = %d at line %d", ret, __LINE__);
+    }
+    return ret;
+}
 
 int vl_video_encoder_change_framerate_hevc(vl_codec_handle_hevc_t codec_handle,
                             int frameRate,int bitRate)
