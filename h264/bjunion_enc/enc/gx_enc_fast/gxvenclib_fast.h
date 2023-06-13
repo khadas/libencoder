@@ -138,7 +138,6 @@ typedef struct {
     int32_t quant;
 
     int fix_qp;
-    float avg_qp;
 	int i_qp_min;
 	int i_qp_max;
 	int p_qp_min;
@@ -198,7 +197,6 @@ extern void* GxInitFastEncode(int fd, amvenc_initpara_t* init_para);
 extern AMVEnc_Status GxFastEncodeInitFrame(void *dev, ulong *yuv, AMVEncBufferType type, AMVEncFrameFmt fmt, bool IDRframe);
 extern AMVEnc_Status GxFastEncodeSPS_PPS(void *dev, unsigned char* outptr, int* datalen);
 extern AMVEnc_Status GxFastEncodeSlice(void *dev, unsigned char* outptr, int* datalen);
-extern AMVEnc_Status GxFastGetAvgQp(void* dev, float* avgQp);
 extern AMVEnc_Status GxFastEncodeCommit(void* dev, bool IDR);
 extern void GxUnInitFastEncode(void *dev);
 bool isSVCandVBR(void);

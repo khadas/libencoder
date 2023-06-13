@@ -47,7 +47,6 @@ typedef struct {
     int p_qp_max;
 }config_param_t;
 
-void print_help();
 bool get_valid_int_param(char *linestr,char *var_str,int *param) {
     char *valid_str = NULL;
     char sub_str[256] = {0};
@@ -186,20 +185,13 @@ bool parse_config_param(const char *argv[],int argc,config_param_t *param) {
     param->buf_type = atoi(argv[10]);
     param->num_planes = atoi(argv[11]);
 
-    if (argc == 13 && atoi(argv[12]) >= 0)
+    if (argc == 13)
     {
         param->fix_qp = atoi(argv[12]);
-    }
-
-    if ((argc > 13 && argc < 17) || (argc == 13 && atoi(argv[12]) < 0))
-    {
-        print_help();
-        return false;
     }
 
     if (argc == 17)
     {
-        param->fix_qp = atoi(argv[12]);
         param->i_qp_min = atoi(argv[13]);
         param->i_qp_max = atoi(argv[14]);
         param->p_qp_min = atoi(argv[15]);
@@ -633,8 +625,7 @@ int main(int argc, const char *argv[]) {
     }
     if (1 == inst_num && 0 == use_cfg_file)
     {
-        if (!parse_config_param(&argv[2],argc-2,&config_param[0]))
-            return -1;
+        parse_config_param(&argv[2],argc-2,&config_param[0]);
         check_params(&config_param[0]);
     }
     else {

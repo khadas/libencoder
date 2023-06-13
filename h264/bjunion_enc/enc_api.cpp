@@ -40,7 +40,6 @@ const AMVencHWFuncPtr gx_fast_dev = {
     GxFastEncodeInitFrame,
     GxFastEncodeSPS_PPS,
     GxFastEncodeSlice,
-    GxFastGetAvgQp,
     GxFastEncodeCommit,
     GxUnInitFastEncode,
 };
@@ -253,18 +252,6 @@ AMVEnc_Status AMVEncodeSlice(amvenc_hw_t *hw_info, unsigned char *outptr, int *d
         return AMVENC_FAIL;
     if (gdev[hw_info->dev_id]->EncodeSlice != NULL)
         ret = gdev[hw_info->dev_id]->EncodeSlice(hw_info->dev_data, outptr, datalen);
-    return ret;
-}
-
-AMVEnc_Status AMVGetAvgQp(amvenc_hw_t *hw_info, float *avgQp)
-{
-    AMVEnc_Status ret = AMVENC_FAIL;
-    if (!hw_info)
-        return AMVENC_MEMORY_FAIL;
-    if ((hw_info->dev_id <= NO_DEFINE) || (hw_info->dev_id >= MAX_DEV) || (hw_info->dev_fd < 0) || (!hw_info->dev_data))
-        return AMVENC_FAIL;
-    if (gdev[hw_info->dev_id]->GetAvgQp != NULL)
-        ret = gdev[hw_info->dev_id]->GetAvgQp(hw_info->dev_data, avgQp);
     return ret;
 }
 
