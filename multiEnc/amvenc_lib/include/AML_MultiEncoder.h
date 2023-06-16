@@ -175,6 +175,7 @@ typedef struct EncInitParams_s {
 extern amv_enc_handle_t AML_MultiEncInitialize(AMVEncInitParams* encParam);
 extern AMVEnc_Status AML_MultiEncSetInput(amv_enc_handle_t handle,
                                 AMVMultiEncFrameIO *input);
+extern AMVEnc_Status AML_MultiEncGetAvgQp(amv_enc_handle_t handle, int *avgqp);
 extern AMVEnc_Status AML_MultiEncNAL(amv_enc_handle_t handle,
                                 unsigned char* buffer,
                                 unsigned int* buf_nal_size,

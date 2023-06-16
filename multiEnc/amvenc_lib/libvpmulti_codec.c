@@ -1083,6 +1083,20 @@ encoding_metadata_t vl_multi_encoder_encode(vl_codec_handle_t codec_handle,
   return result;
 }
 
+int vl_video_encoder_getavgqp(vl_codec_handle_t codec_handle, int *avg_qp) {
+    AMVEnc_Status ret;
+    VPMultiEncHandle *handle = (VPMultiEncHandle *)codec_handle;
+    int avgqp;
+
+    ret = AML_MultiEncGetAvgQp(handle->am_enc_handle, &avgqp);
+    if (ret == AMVENC_SUCCESS) {
+        *avg_qp = avgqp;
+    } else {
+        VLOG(ERR, "get avgqp fail! ret = %d at line %d", ret, __LINE__);
+    }
+    return ret;
+}
+
 int vl_video_encoder_update_qp_hint(vl_codec_handle_t codec_handle,
                             unsigned char *pq_hint_table,
                             int size)
