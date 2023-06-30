@@ -215,6 +215,7 @@ typedef struct AMVEncContext_s {
   uint32 frame_rate; /* frame rate */
   int32 idrPeriod;   /* IDR period in number of frames */
   uint32 op_flag;
+  uint32 averageQP;
 
   uint32 src_num;   /*total src_frame buffer needed */
   uint32 fb_num;    /* total reconstuction  frame buffer encoder needed */
@@ -301,6 +302,7 @@ static int SRC2_PIXFORMAT = PIXEL_FORMAT_YCrCb_420_SP;
 static int DST_PIXFORMAT = PIXEL_FORMAT_YCrCb_420_SP;
 
 static GE2DOP OP = AML_GE2D_STRETCHBLIT;
+
 static int do_strechblit(aml_ge2d_info_t* pge2dinfo, AMVMultiEncFrameIO* input) {
   int ret = -1;
   char code = 0;
@@ -2241,6 +2243,18 @@ retry_point:
   return AMVENC_SUCCESS;
 }
 
+AMVEnc_Status AML_MultiEncGetAvgQp(amv_enc_handle_t ctx_handle, int *avgqp) {
+    AMVEnc_Status ret = AMVENC_FAIL;
+    AMVMultiCtx * ctx = (AMVMultiCtx* ) ctx_handle;
+    if (ctx == NULL) return AMVENC_FAIL;
+
+    if (ctx->averageQP) {
+        *avgqp = ctx->averageQP;
+        ret = AMVENC_SUCCESS;
+    }
+    return ret;
+}
+
 AMVEnc_Status AML_MultiEncNAL(amv_enc_handle_t ctx_handle,
                              unsigned char* buffer,
                              unsigned int* buf_nal_size,
@@ -2369,6 +2383,7 @@ retry_pointB:
         ;/* SUCCESS */
        VLOG(INFO, "Success one = %d\n", encOutputInfo.result);
    }
+    ctx->averageQP = encOutputInfo.avgCtuQp;
 
     if (encOutputInfo.reconFrameIndex == RECON_IDX_FLAG_CHANGE_PARAM) {
         VLOG(INFO, "CHANGE PARAMETER!\n");

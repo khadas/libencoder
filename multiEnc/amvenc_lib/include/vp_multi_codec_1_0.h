@@ -350,6 +350,7 @@ encoding_metadata_t vl_multi_encoder_encode(vl_codec_handle_t handle,
  *
  *@return : if success return 0 ,else return <= 0
  */
+int vl_video_encoder_getavgqp(vl_codec_handle_t handle, int *avg_qp);
 int vl_video_encoder_update_qp_hint(vl_codec_handle_t handle,
                             unsigned char *pq_hint_table,
                             int size);
