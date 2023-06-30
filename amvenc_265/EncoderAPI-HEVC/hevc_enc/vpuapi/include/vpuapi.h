@@ -745,7 +745,7 @@ It specifies the way chroma data is interleaved in the frame buffer, bufCb or bu
     int nv21;
 /**
 @verbatim
-It specifies an endianess of frame buffer.
+It specifies an endianness of frame buffer.
 
 @* 0 : little endian format
 @* 1 : big endian format
@@ -796,7 +796,7 @@ typedef struct {
     int size;                   /**< A size of frame buffer  */
     int lumaBitDepth;           /**< A bit-depth of luma sample */
     int chromaBitDepth;         /**< A bit-depth of chroma sample */
-    int endian;                 /**< An endianess of frame buffer  */
+    int endian;                 /**< An endianness of frame buffer  */
     int num;                    /**< The number of frame buffer to allocate  */
     int type;                   /**< <<vpuapi_h_FramebufferAllocType>>  */
 } FrameBufferAllocInfo;
@@ -1052,7 +1052,7 @@ This is a dedicated type for decoder handle returned when a decoder instance is
 opened. A decoder instance can be referred to by the corresponding handle. CodecInst
 is a type managed internally by API. Application does not need to care about it.
 
-NOTE: This type is vaild for decoder only.
+NOTE: This type is valid for decoder only.
 @endverbatim
 */
 typedef struct CodecInst* DecHandle;
@@ -1287,7 +1287,7 @@ It writes output with 8 burst in linear map mode. (CODA9 only)
     int             bwbEnable;
 /**
 @verbatim
-Frame buffer endianess
+Frame buffer endianness
 
 @* 0 : little endian format
 @* 1 : big endian format
@@ -1301,7 +1301,7 @@ NOTE: For setting specific values of 128 bit endiness, please refer to the 'WAVE
     EndianMode      frameEndian;
 /**
 @verbatim
-Bitstream buffer endianess
+Bitstream buffer endianness
 
 @* 0 : little endian format
 @* 1 : big endian format
@@ -2103,7 +2103,7 @@ This is a dedicated type for encoder handle returned when an encoder instance is
 opened. An encoder instance can be referred by the corresponding handle. EncInst
 is a type managed internally by API. Application does not need to care about it.
 
-NOTE: This type is vaild for encoder only.
+NOTE: This type is valid for encoder only.
 @endverbatim
 */
 typedef EncInst * EncHandle;
@@ -2176,9 +2176,9 @@ typedef struct {
 */
 typedef struct {
     int customGopSize;                  /**< Size of the custom GOP (0~8) */
-    int useDeriveLambdaWeight;           /**< It internally derives a lamda weight instead of using the given lamda weight. */
+    int useDeriveLambdaWeight;           /**< It internally derives a lambda weight instead of using the given lambda weight. */
     CustomGopPicParam picParam[MAX_GOP_NUM];  /**< Picture parameters of #th picture in the custom GOP */
-    int gopPicLambda[MAX_GOP_NUM];       /**< A lamda weight of #th picture in the custom GOP */
+    int gopPicLambda[MAX_GOP_NUM];       /**< A lambda weight of #th picture in the custom GOP */
 } CustomGopParam;
 
 
@@ -2188,7 +2188,7 @@ typedef struct {
 typedef struct {
     int roiEnable;                      /**< It enables ROI map. */
     int roiDeltaQp;                     /**< It specifies the delta QP for ROI important level. */
-    int mapEndian;                      /**< It specifies endianess of ROI CTU map. For the specific modes, refer to the EndianMode of <<vpuapi_h_DecOpenParam>>. */
+    int mapEndian;                      /**< It specifies endianness of ROI CTU map. For the specific modes, refer to the EndianMode of <<vpuapi_h_DecOpenParam>>. */
 /**
 @verbatim
 It specifies the stride of CTU-level ROI/mode/QP map. It should be set with `(Width  + CTB_SIZE - 1) / CTB_SIZE`.
@@ -3323,7 +3323,7 @@ CbCr order in planar mode (YV12 format)
     int             cbcrOrder;
 /**
 @verbatim
-Frame buffer endianess
+Frame buffer endianness
 
 @* 0 : little endian format
 @* 1 : big endian format
@@ -3337,7 +3337,7 @@ NOTE: For setting specific values of 128 bit endiness, please refer to the 'WAVE
     int             frameEndian;
 /**
 @verbatim
-Bistream buffer endianess
+Bistream buffer endianness
 
 @* 0 : little endian format
 @* 1 : big endian format
@@ -3351,7 +3351,7 @@ NOTE: For setting specific values of 128 bit endiness, please refer to the 'WAVE
     int             streamEndian;
 /**
 @verbatim
-Endianess of source YUV
+Endianness of source YUV
 
 @* 0 : Little endian format
 @* 1 : Big endian format
@@ -4635,7 +4635,7 @@ RetCode VPU_DecUpdateBitstreamBuffer(
 A variable specifying the amount of bits transferred into bitstream buffer for the current decoder instance.
 
 @* 0 : It means that no more bitstream exists to feed (end of stream).
-If 0 is set for `size`, VPU decodes just remaing bitstream and returns -1 to `indexFrameDisplay`.
+If 0 is set for `size`, VPU decodes just remaining bitstream and returns -1 to `indexFrameDisplay`.
 @* -1: It allows VPU to continue to decode without VPU_DecClose(),
 even after remaining stream has completely been decoded by VPU_DecUpdateBitstreamBuffer(handle, 0).
 This is especially useful when a sequence changes in the middle of decoding.

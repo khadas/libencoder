@@ -2461,7 +2461,7 @@ Int32 CalcChromaSize(
             }
             ChrFieldRasSize = ((ChrSizeYField + (VerSizePerRas-1))/VerSizePerRas) << Ras1DBit;
             ChrFrameRasSize = ChrFieldRasSize *2;
-            size_dpb_chr = (ChrFrameRasSize << (pDramCfg->bankBit+pDramCfg->casBit+pDramCfg->busBit)) / 2;      // divide 2  = to calucate one Cb(or Cr) size;
+            size_dpb_chr = (ChrFrameRasSize << (pDramCfg->bankBit+pDramCfg->casBit+pDramCfg->busBit)) / 2;      // divide 2  = to calculate one Cb(or Cr) size;
 
         }
         else {  // productId != 960

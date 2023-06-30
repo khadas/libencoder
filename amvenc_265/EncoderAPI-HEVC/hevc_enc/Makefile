@@ -17,7 +17,7 @@ DEPFILES += $(patsubst %cpp,%d,$(CXX_SRCS))
 
 
 INC = -I./include -I. -I./vpuapi/include -I./vpuapi
-TARGET = libvphevcodec_multi.so
+TARGET = libamvenc_265.so
 
 all: $(TARGET)
 

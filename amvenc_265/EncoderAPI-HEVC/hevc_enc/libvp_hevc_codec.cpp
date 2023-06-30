@@ -5,12 +5,12 @@
 #include <utils/Log.h>
 #define LOGCAT
 #endif
-#include "vp_hevc_multi_codec_1_0.h"
+#include "vp_hevc_codec_1_0.h"
 #include "include/AML_HEVCEncoder.h"
 #include "include/enc_define.h"
 #include "./vpuapi/include/vdi_osal.h"
 
-const char version[] = "Amlogic libvp_hevc_multi_codec version 1.0";
+const char version[] = "Amlogic libamvenc_265 version 1.0";
 
 const char *vl_get_version() {
     return version;

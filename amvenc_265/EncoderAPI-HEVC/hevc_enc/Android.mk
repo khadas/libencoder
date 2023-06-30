@@ -33,6 +33,8 @@ LOCAL_MODULE:= libvp_hevc_codec_new
 LOCAL_MODULE_TAGS := optional
 #LOCAL_PRELINK_MODULE := false
 LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)/include
+LOCAL_LICENSE_KINDS := SPDX-license-identifier-Apache-2.0 legacy_proprietary
+LOCAL_LICENSE_CONDITIONS := notice proprietary by_exception_only
 
 include $(BUILD_SHARED_LIBRARY)
 

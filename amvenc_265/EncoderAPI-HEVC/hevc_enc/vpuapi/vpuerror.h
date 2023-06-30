@@ -85,7 +85,7 @@
 #define WAVE4_SPEC_OVER_CHROMA_FORMAT                                   0x00040000  // Spec over	ERROR	chroma format is not 4:2:0
 #define WAVE4_SPEC_OVER_BIT_DEPTH                                       0x00080000  // luma or chroma bit depth over.
                                                                                     // In WAVE410 v1.0 luma and chroma bit depth should be 8 bits.
-                                                                                    // In WAVE410 v2.0 luma and chroma bit depth should be up to 10 bits repectively.
+                                                                                    // In WAVE410 v2.0 luma and chroma bit depth should be up to 10 bits respectively.
 #define WAVE4_SPEC_OVER_PROFILE                                         0x00100000  // Spec over	WARNING
                                                                                     // general_profile_idc and general_profile_compatibility_flag over.
                                                                                     // In WAVE410 v1.0. general_profile_idc and general_profile_compatibility_flag should specify Main profile.

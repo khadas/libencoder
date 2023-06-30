@@ -1,4 +1,4 @@
-#include "hevc_enc/vp_hevc_multi_codec_1_0.h"
+#include "hevc_enc/vp_hevc_codec_1_0.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -82,7 +82,7 @@ typedef struct {
     int   cfg_opt;         /* optional, flags to control the encode feature settings
                             bit 0:roi control. 0: disabled (default) 1: enabled
                             bit 1: update control. 0: disabled (default) 1: enabled
-                            bit 2 ~ bit 6 encode GOP patttern options:
+                            bit 2 ~ bit 6 encode GOP pattern options:
                                 0 default(IP) 1:I only    2:IP_only    3: IBBBP
                                 4:IP_SVC1     5:IP_SVC2   6: IP_SVC3   7: IP_SVC4  8: CUSTP
                             bit 7:long term references. 0: disabled (default) 1: enabled
@@ -142,7 +142,7 @@ int main(int argc, const char *argv[]){
         printf("  cfg_opt  \t: optional, flags to control the encode feature settings\n");
         printf("            \t\t  bit 0:roi control. 0: disabled (default) 1: enabled\n");
         printf("            \t\t  bit 1: update control. 0: disabled (default) 1: enabled\n");
-        printf("            \t\t  bit 2 ~ bit 6 encode GOP patttern options:\n");
+        printf("            \t\t  bit 2 ~ bit 6 encode GOP pattern options:\n");
         printf("            \t\t\t 0 default(IP) 1:I only    2:IP_only    3: IBBBP\n");
         printf("            \t\t\t 4:IP_SVC1     5:IP_SVC2   6: IP_SVC3   7: IP_SVC4  8: CUSTP \n");
         printf("            \t\t  bit 7:long term references. 0: disabled (default) 1: enabled\n");

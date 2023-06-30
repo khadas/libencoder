@@ -300,7 +300,7 @@ enum {
 #define W4_BS_START_ADDR                    (W4_REG_BASE + 0x0120)
 #define W4_BS_SIZE                          (W4_REG_BASE + 0x0124)
 /* BS_PARAM             [9]         Ring-buffer enable
- *                      [3:0]       endianess
+ *                      [3:0]       endianness
  */
 #define BSPARAM_ENABLE_RINGBUFFER           (1<<9)
 #define BSPARAM_ENABLE_NALPUMPING           (1<<8)
@@ -317,12 +317,12 @@ enum {
 #define W4_BS_WR_PTR                        (W4_REG_BASE + 0x0134)
 #define W4_ADDR_WORK_BASE                   (W4_REG_BASE + 0x0138)
 #define W4_WORK_SIZE                        (W4_REG_BASE + 0x013C)
-/* WORK_PARAM           [3:0]       Endianess
+/* WORK_PARAM           [3:0]       Endianness
  */
 #define W4_WORK_PARAM                       (W4_REG_BASE + 0x0140)
 #define W4_ADDR_TEMP_BASE                   (W4_REG_BASE + 0x0144)
 #define W4_TEMP_SIZE                        (W4_REG_BASE + 0x0148)
-/* TEMP_PARAM           [3:0]       Endianess
+/* TEMP_PARAM           [3:0]       Endianness
  */
 #define W4_TEMP_PARAM                       (W4_REG_BASE + 0x014C)
 
@@ -334,7 +334,7 @@ enum {
 /************************************************************************/
 #define W4_CMD_DEC_ADDR_REPORT_BASE         (W4_REG_BASE + 0x015C)
 #define W4_CMD_DEC_REPORT_SIZE              (W4_REG_BASE + 0x0160)
-/* USER_PARAM           [3:0]       Endianess
+/* USER_PARAM           [3:0]       Endianness
  */
 #define W4_CMD_DEC_REPORT_PARAM             (W4_REG_BASE + 0x0164)
 #define W4_CMD_DEC_ADDR_USER_BASE           (W4_REG_BASE + 0x0168)
