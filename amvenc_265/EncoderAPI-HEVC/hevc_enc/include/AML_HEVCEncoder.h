@@ -117,6 +117,11 @@ typedef struct HEVCEncParams_s {
     int transfer; /*color transfer charicstics*/
     int matrix; /* color space matrix coefficients*/
     bool range; /*color range flag, 0:full, 1:limitedd*/
+    bool crop_enable;
+    int crop_left;
+    int crop_top;
+    int crop_right;
+    int crop_bottom;
 } AMVHEVCEncParams;
 
 typedef struct {

@@ -15,7 +15,8 @@ LOCAL_SRC_FILES := \
     vpuapi/vdi_osal.c \
     vpuapi/vpuapi.c \
     vpuapi/vpuapifunc.c \
-    vpuapi/wave4.c
+    vpuapi/wave4.c \
+    h265bitstream.c
 
 #define MAKEANDROID
 
