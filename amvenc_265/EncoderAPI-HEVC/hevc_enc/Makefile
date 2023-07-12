@@ -1,7 +1,7 @@
 CFLAGS +=-O2 -fPIC
 CFLAGS += -g
-LDFLAGS += -lm -lrt -shared
-LDFLAGS += -lge2d
+LDLIBS += -lm -lrt -shared
+LDLIBS += -lge2d
 
 SUFFIXES += .d
 NODEPS := clean distclean
@@ -28,7 +28,7 @@ endif
 
 $(TARGET): $(C_OBJS) $(CXX_OBJS)
 	@echo " [LINK] $@"
-	$(CXX) $(LDFLAGS) -Wl,-soname,$(TARGET)  -o $@ $^
+	$(CXX) $(LDLIBS) -Wl,-soname,$(TARGET)  -o $@ $^
 
 %.o: %.c
 	@echo " [CXX] $<"

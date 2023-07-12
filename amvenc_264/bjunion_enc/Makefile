@@ -5,8 +5,8 @@
 
 CFLAGS +=-O2 -fPIC
 CFLAGS += -g
-#LDFLAGS +=  -L./h264bitstream/.libs -lh264bitstream -lm -lrt -shared
-LDFLAGS += -lh264bitstream -lm -lrt -shared
+#LDLIBS +=  -L./h264bitstream/.libs -lh264bitstream -lm -lrt -shared
+LDLIBS += -lh264bitstream -lm -lrt -shared
 
 SUFFIXES += .d
 NODEPS := clean distclean
@@ -34,7 +34,7 @@ endif
 
 $(TARGET): $(C_OBJS) $(CXX_OBJS)
 	@echo " [LINK] $@"
-	$(CXX) $(LDFLAGS) -Wl,-soname,$(TARGET) -o $@ $^
+	$(CXX) $(LDLIBS) -Wl,-soname,$(TARGET) -o $@ $^
 
 %.o: %.c
 	@echo " [CXX] $<"
