@@ -69,11 +69,8 @@ static unsigned long long total_encode_frames;
 static struct timeval start_test;
 static struct timeval end_test;
 #endif
-#if defined(__ANDROID__)
+
 #define SUPPORT_SCALE 1
-#else
-#define SUPPORT_SCALE 0
-#endif
 
 #if SUPPORT_SCALE
 #include <ge2d_port.h>
@@ -1671,7 +1668,7 @@ AMVEnc_Status AML_MultiEncSetInput(amv_enc_handle_t ctx_handle,
         //memcpy((void *) ((char *)ctx->amlge2d.ge2dinfo.src_info[0].vaddr[0] + input->pitch * input->height), (void *)input->YCbCr[1], input->pitch * input->height / 4);
         //memcpy((void *) ((char *)ctx->amlge2d.ge2dinfo.src_info[0].vaddr[0] + (input->pitch * input->height * 5) /4), (void *)input->YCbCr[2], input->pitch * input->height / 4);
       } else if (ctx->fmt == AMVENC_RGB888) {
-        //memcpy((void *)ctx->amlge2d.ge2dinfo.src_info[0].vaddr[0], (void *)input->YCbCr[0], input->pitch * input->height * 3);
+        memcpy((void *)ctx->amlge2d.ge2dinfo.src_info[0].vaddr[0], (void *)input->YCbCr[0], input->pitch * input->height * 3);
       }
 
       do_strechblit(&ctx->amlge2d.ge2dinfo, input);
