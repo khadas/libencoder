@@ -992,7 +992,7 @@ AMVEnc_Status AML_HEVCSetInput(amv_enc_handle_hevc_t ctx_handle, AMVHEVCEncFrame
                 //memcpy((void *) ((char *)ctx->amlge2d.ge2dinfo.src_info[0].vaddr[0] + input->pitch * input->height), (void *)input->YCbCr[1], input->pitch * input->height / 4);
                 //memcpy((void *) ((char *)ctx->amlge2d.ge2dinfo.src_info[0].vaddr[0] + (input->pitch * input->height * 5) /4), (void *)input->YCbCr[2], input->pitch * input->height / 4);
             } else if (ctx->fmt == AMVENC_RGB888) {
-                //memcpy((void *)ctx->amlge2d.ge2dinfo.src_info[0].vaddr[0], (void *)input->YCbCr[0], input->pitch * input->height * 3);
+                memcpy((void *)ctx->amlge2d.ge2dinfo.src_info[0].vaddr[0], (void *)input->YCbCr[0], input->pitch * input->height * 3);
             }
 
             do_strechblit(&ctx->amlge2d.ge2dinfo, input);
