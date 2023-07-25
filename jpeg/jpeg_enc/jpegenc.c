@@ -150,6 +150,7 @@ long hw_encode_init(int timeout) {
 	uint32_t buff_info[7];
 
 	hw_jpegenc_t* hw_info = (hw_jpegenc_t*) malloc(sizeof(hw_jpegenc_t));
+	memset(hw_info,0,sizeof(hw_jpegenc_t));
 
 	if (!hw_info)
 		return (long)NULL;
