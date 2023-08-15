@@ -277,6 +277,9 @@ amvenc_metadata_t amvenc_multi_encode(amvenc_handle_t handle,
         case AML_FRAME_TYPE_I:
             enc_frame_type = FRAME_TYPE_I;
             break;
+        case AML_FRAME_TYPE_IDR:
+            enc_frame_type = FRAME_TYPE_IDR;
+            break;
         default:
             break;
     }
