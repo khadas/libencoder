@@ -1,0 +1,98 @@
+/*
+ * Copyright 2023 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package {
+    //   legacy_proprietary
+    default_applicable_licenses: ["vendor_amlogic_common_license"],
+}
+
+cc_library_shared {
+    name: "lib_encoder_media_process",
+    defaults: [
+        //"libcodec2-impl-defaults",
+    ],
+    vendor: true,
+
+    srcs: [
+        "AmlVencParamIntf.cpp",
+        "AmlVencParam.cpp",
+        "AmlVencInstIntf.cpp",
+        "AmlVencInst.cpp",
+        "AmlVencParamWave5.cpp",
+        "AmlVencInstHelper.cpp",
+        "AmlVencInstWave5.cpp"
+    ],
+
+    local_include_dirs: [
+        "include",
+    ],
+
+    shared_libs: [
+        "android.hardware.graphics.allocator@2.0",
+        "android.hardware.graphics.bufferqueue@2.0",
+        "android.hardware.graphics.mapper@2.0",
+        "android.hardware.media.bufferpool@2.0",
+        "libbase",
+        "libbinder",
+        "liblog",
+        "libstagefright_bufferqueue_helper",
+        "libsfplugin_ccodec_utils",
+        "libcodec2_simple_component",
+        "libstagefright_foundation",
+        "libstagefright_bufferpool@2.0",
+        "libutils",
+        "libcutils",
+        "libcodec2",
+        "libcodec2_vndk",
+        "libui",
+        "libutilscallstack",
+        "libevent",
+        "libvendor_c2componentstore",
+        "libamgralloc_ext",
+        "lib_amvenc",
+    ],
+
+    header_libs: [
+        "media_plugin_headers",
+        "libcodec2_headers",
+        "libcodec2_internal",
+        "libstagefright_headers",
+        "libnativewindow_headers",
+        "libnativebase_headers",
+        //"libmediahal_headers",
+        "libvendor_c2componentstore_headers",
+        "libvendor_component_headers",
+        "libgralloc_headers",
+    ],
+
+    // -Wno-unused-parameter is needed for libchrome/base codes
+    cflags: [
+        "-Werror",
+        "-Wall",
+        "-Wno-unused-parameter",
+    ] + [
+        "-Wno-unused-lambda-capture",
+        "-Wno-unknown-warning-option",
+    ],
+    sanitize: {
+        misc_undefined: [
+            "unsigned-integer-overflow",
+            "signed-integer-overflow",
+        ],
+    },
+
+    ldflags: ["-Wl,-Bsymbolic"],
+
+}
