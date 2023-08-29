@@ -419,7 +419,12 @@ int vl_multi_encoder_adjust_h264_sps(VPMultiEncHandle* handle,char *sps_nalu,int
     sps_t sps = {0};
     bs_t bs = {0};
     int new_sps_size = 0;
-    if (!handle->vui_info.vui_parameters_present_flag) {
+
+    if ((!handle->vui_info.vui_parameters_present_flag) &&
+        (!((handle->mEncParams.idr_period != 1) &&
+        ((handle->mEncParams.GopPreset == GOP_OPT_NONE) ||
+        (handle->mEncParams.GopPreset == GOP_IP) ||
+        (handle->mEncParams.GopPreset == GOP_IP_SVC5))))) {
         VLOG(INFO,"vui_parameters_present_flag is false,do not add vui info");
         return sps_nalu_size;
     }
@@ -427,20 +432,38 @@ int vl_multi_encoder_adjust_h264_sps(VPMultiEncHandle* handle,char *sps_nalu,int
     bs_init(&bs, sps_nalu + H264_HEADER_LEN, sps_nalu_size - H264_HEADER_LEN);
     read_seq_parameter_set_rbsp(&sps, &bs);
     read_rbsp_trailing_bits(&bs);
-
-    sps.vui_parameters_present_flag = handle->vui_info.vui_parameters_present_flag;
-    sps.vui.video_full_range_flag = handle->vui_info.video_full_range_flag;
-    if (sps.vui_parameters_present_flag) {
-        sps.vui.video_signal_type_present_flag = 1;//handle->video_signal_type_present_flag;
+    if ((handle->mEncParams.idr_period != 1) &&
+        ((handle->mEncParams.GopPreset == GOP_OPT_NONE) ||
+        (handle->mEncParams.GopPreset == GOP_IP) ||
+        (handle->mEncParams.GopPreset == GOP_IP_SVC5))) {
+        sps.vui_parameters_present_flag = 1;
+        sps.vui.bitstream_restriction_flag = 1;
+        if (sps.vui.bitstream_restriction_flag) {
+            sps.vui.motion_vectors_over_pic_boundaries_flag = 1;
+            sps.vui.max_bytes_per_pic_denom = 0;
+            sps.vui.max_bits_per_mb_denom = 0;
+            sps.vui.log2_max_mv_length_horizontal = 16;
+            sps.vui.log2_max_mv_length_vertical = 16;
+            sps.vui.num_reorder_frames = 0;
+            sps.vui.max_dec_frame_buffering = 2;
+        }
     }
-    if (handle->vui_info.colour_primaries && handle->vui_info.transfer_characteristics && handle->vui_info.matrix_coefficients) {
-        sps.vui.colour_description_present_flag = 1;//handle->colour_description_present_flag;
-        sps.vui.colour_primaries = handle->vui_info.colour_primaries;
-        sps.vui.transfer_characteristics = handle->vui_info.transfer_characteristics;
-        sps.vui.matrix_coefficients = handle->vui_info.matrix_coefficients;
+
+    if (handle->vui_info.vui_parameters_present_flag) {
+        sps.vui_parameters_present_flag = handle->vui_info.vui_parameters_present_flag;
+        sps.vui.video_full_range_flag = handle->vui_info.video_full_range_flag;
+        if (sps.vui_parameters_present_flag) {
+            sps.vui.video_signal_type_present_flag = 1;//handle->video_signal_type_present_flag;
+        }
+        if (handle->vui_info.colour_primaries && handle->vui_info.transfer_characteristics && handle->vui_info.matrix_coefficients) {
+            sps.vui.colour_description_present_flag = 1;//handle->colour_description_present_flag;
+            sps.vui.colour_primaries = handle->vui_info.colour_primaries;
+            sps.vui.transfer_characteristics = handle->vui_info.transfer_characteristics;
+            sps.vui.matrix_coefficients = handle->vui_info.matrix_coefficients;
+        }
+        VLOG(INFO,"new header range =%d,primaries = %d,transfer:%d,matrix:%d", sps.vui.video_full_range_flag,sps.vui.colour_primaries,sps.vui.transfer_characteristics,sps.vui.matrix_coefficients);
     }
 
-    VLOG(INFO,"old header range =%d,primaries = %d,transfer:%d,matrix:%d", sps.vui.video_full_range_flag,sps.vui.colour_primaries,sps.vui.transfer_characteristics,sps.vui.matrix_coefficients);
     memset(sps_nalu + H264_HEADER_LEN, 0, buffer_len - H264_HEADER_LEN);
 
     bs_init(&bs, sps_nalu + H264_HEADER_LEN, buffer_len - H264_HEADER_LEN);
