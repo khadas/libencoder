@@ -44,6 +44,7 @@ typedef struct _InputFrameInfo{
     int planeNum;
     uint64_t canvas;
     int size;
+    uint8_t reserved[64];
 }stInputFrameInfo;
 
 
@@ -56,7 +57,7 @@ public:
 public:
     virtual bool init() = 0;
     virtual bool GenerateHeader(char *pHeader,unsigned int &Length) = 0;
-    virtual eResult PreProcess(std::shared_ptr<C2Buffer> inputBuffer,std::shared_ptr<const C2GraphicView> view,stInputFrameInfo &InputFrameInfo) = 0;
+    virtual eResult PreProcess(std::shared_ptr<C2Buffer> inputBuffer,stInputFrameInfo &InputFrameInfo) = 0;
     virtual c2_status_t ProcessOneFrame(stInputFrameInfo InputFrameInfo,stOutputFrame &OutFrame) = 0;
     virtual bool Destroy() = 0;
     virtual void SetVencParamInst(IAmlVencParam *pVencParamInst) = 0;

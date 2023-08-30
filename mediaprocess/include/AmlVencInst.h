@@ -29,7 +29,7 @@ public:
 public:
     virtual bool init();
     virtual bool GenerateHeader(char *pHeader,unsigned int &Length);
-    virtual eResult PreProcess(std::shared_ptr<C2Buffer> inputBuffer,std::shared_ptr<const C2GraphicView> view,stInputFrameInfo &InputFrameInfo);
+    virtual eResult PreProcess(std::shared_ptr<C2Buffer> inputBuffer,stInputFrameInfo &InputFrameInfo);
     virtual c2_status_t ProcessOneFrame(stInputFrameInfo InputFrameInfo,stOutputFrame &OutFrame);
     virtual bool Destroy();
     virtual void SetVencParamInst(IAmlVencParam *pVencParamInst);
@@ -44,7 +44,7 @@ private:
     bool IsNV12(const C2GraphicView &view);
     bool IsNV21(const C2GraphicView &view);
     bool IsI420(const C2GraphicView &view);
-    c2_status_t GraphicDataProc(std::shared_ptr<C2Buffer> inputBuffer,std::shared_ptr<const C2GraphicView> view,stInputFrameInfo *pFrameInfo);
+    c2_status_t GraphicDataProc(std::shared_ptr<C2Buffer> inputBuffer,stInputFrameInfo *pFrameInfo);
     c2_status_t LinearDataProc(std::shared_ptr<const C2ReadView> view,stInputFrameInfo *pFrameInfo);
     c2_status_t DMAProc(const native_handle_t *priv_handle,stInputFrameInfo *pFrameInfo,uint32_t *dumpFileSize);
     c2_status_t ViewDataProc(std::shared_ptr<const C2GraphicView> view,stInputFrameInfo *pFrameInfo,uint32_t *dumpFileSize);

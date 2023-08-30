@@ -85,6 +85,7 @@ typedef struct _VencParam {
     bool canvas_mode;
     stColorAspect ColorAspect;
     stProfileLevelInfo ProfileLevel;
+    char reserved[64];
 }stVencParam;
 
 

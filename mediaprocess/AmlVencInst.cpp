@@ -51,7 +51,7 @@ do { \
 #define AMLVenc_LOG(level, fmt, str...) CODEC2_LOG(level, fmt, ##str)
 
 
-#define USE_CONTINUES_PHYBUFF(h) (am_gralloc_get_buffer_fd(h) & GRALLOC_USAGE_HW_VIDEO_ENCODER)
+#define USE_CONTINUES_PHYBUFF(h) (am_gralloc_get_usage(h) & GRALLOC_USAGE_HW_VIDEO_ENCODER)
 #define align_32(x)  ((((x)+31)>>5)<<5)
 
 
@@ -383,8 +383,8 @@ c2_status_t AmlVencInst::DMAProc(const native_handle_t *priv_handle,stInputFrame
 }
 
 
-c2_status_t AmlVencInst::GraphicDataProc(std::shared_ptr<C2Buffer> inputBuffer,std::shared_ptr<const C2GraphicView> view,stInputFrameInfo *pFrameInfo) {
-    //std::shared_ptr<const C2GraphicView> view;
+c2_status_t AmlVencInst::GraphicDataProc(std::shared_ptr<C2Buffer> inputBuffer,stInputFrameInfo *pFrameInfo) {
+    std::shared_ptr<const C2GraphicView> view;
     uint32_t dumpFileSize = 0;
     c2_status_t res = C2_OK;
     stVencParam VencParam;
@@ -404,7 +404,7 @@ c2_status_t AmlVencInst::GraphicDataProc(std::shared_ptr<C2Buffer> inputBuffer,s
         }
     }
     else {
-        //view = std::make_shared<const C2GraphicView>(inputBuffer->data().graphicBlocks().front().map().get());
+        view = std::make_shared<const C2GraphicView>(inputBuffer->data().graphicBlocks().front().map().get());
         if (C2_OK != view->error() || nullptr == view.get()) {
             AMLVenc_LOG(CODEC2_VENC_LOG_ERR,"graphic view map err = %d or view is null", view->error());
             res = C2_BAD_VALUE;
@@ -583,7 +583,7 @@ bool AmlVencInst::GenerateHeader(char *pHeader,unsigned int &Length) {
 
 
 
-eResult AmlVencInst::PreProcess(std::shared_ptr<C2Buffer> inputBuffer,std::shared_ptr<const C2GraphicView> view,stInputFrameInfo &InputFrameInfo) {
+eResult AmlVencInst::PreProcess(std::shared_ptr<C2Buffer> inputBuffer,stInputFrameInfo &InputFrameInfo) {
     std::shared_ptr<const C2ReadView> Linearview;
 
     int type = inputBuffer->data().type();
@@ -591,7 +591,7 @@ eResult AmlVencInst::PreProcess(std::shared_ptr<C2Buffer> inputBuffer,std::share
     AMLVenc_LOG(CODEC2_VENC_LOG_DEBUG,"inputbuffer type:%d",type);
 
     if (C2BufferData::GRAPHIC == type) {
-        if (C2_OK != GraphicDataProc(inputBuffer,view,&InputFrameInfo)) {
+        if (C2_OK != GraphicDataProc(inputBuffer,&InputFrameInfo)) {
             AMLVenc_LOG(CODEC2_VENC_LOG_ERR,"graphic buffer proc failed!!");
             return WORK_IS_VALID;
         }
