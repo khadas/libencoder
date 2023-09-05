@@ -59,9 +59,9 @@ struct jpegenc_request_s {
 	u32 QuantTable_id;
 	u32 flush_flag;
 	u32 block_mode;
-	enum jpegenc_mem_type_e type;
-	enum jpegenc_frame_fmt_e input_fmt;
-	enum jpegenc_frame_fmt_e output_fmt;
+	jpegenc_mem_type_e type;
+	jpegenc_frame_fmt_e input_fmt;
+	jpegenc_frame_fmt_e output_fmt;
 
 	u32 y_off;
 	u32 u_off;
@@ -178,8 +178,8 @@ long hw_encode_init(int timeout) {
 	if (hw_info->mmap_buff.addr == MAP_FAILED) {
 		printf("hw_encode Error: failed to map framebuffer device to memory.\n");
 		goto EXIT_INIT;
-	} else
-		printf("mapped address is %p\n", hw_info->mmap_buff.addr);
+	} /*else
+		printf("mapped address is %p\n", hw_info->mmap_buff.addr);*/
 
 	ret = ioctl(hw_info->dev_fd, JPEGENC_IOC_CONFIG_INIT, NULL);
 
@@ -195,8 +195,8 @@ long hw_encode_init(int timeout) {
 	if (hw_info->timeout == 0)
 		hw_info->timeout = -1;
 
-	printf("hw_info->mmap_buff.size, 0x%x, hw_info->input_buf.addr:0x%p\n", hw_info->mmap_buff.size, hw_info->input_buf.addr);
-	printf("hw_info->assit_buf.addr, 0x%p, hw_info->output_buf.addr:0x%p\n", hw_info->assit_buf.addr, hw_info->output_buf.addr);
+	//printf("hw_info->mmap_buff.size, 0x%x, hw_info->input_buf.addr:0x%p\n", hw_info->mmap_buff.size, hw_info->input_buf.addr);
+	//printf("hw_info->assit_buf.addr, 0x%p, hw_info->output_buf.addr:0x%p\n", hw_info->assit_buf.addr, hw_info->output_buf.addr);
 
 	return (long)hw_info;
 
@@ -476,6 +476,7 @@ static size_t start_encoder(hw_jpegenc_t* hw_info) {
 	uint32_t size = 0;
 	uint32_t cmd[34], status;
 	uint32_t in_format = hw_info->in_format;
+	uint32_t info_off;
 
 #ifdef simulation
 	hw_info->src_size = copy_to_local(hw_info);
@@ -500,11 +501,6 @@ static size_t start_encoder(hw_jpegenc_t* hw_info) {
 
 	} else if (hw_info->type == JPEGENC_DMA_BUFF) {
 		cmd[5] = hw_info->width * hw_info->height * hw_info->bpp / 8;
-		int dma_io_status = ioctl(hw_info->dev_fd, JPEGENC_IOC_CONFIG_DMA_INPUT, &(hw_info->dma_fd));
-		if (dma_io_status < 0) {
-			//printf("JPEGENC_IOC_CONFIG_DMA_INPUT failed\n");
-			return -1;
-		}
 	}
 #endif
 	//printf("[%s:%d]\n", __FUNCTION__, __LINE__);
@@ -523,6 +519,14 @@ static size_t start_encoder(hw_jpegenc_t* hw_info) {
 	cmd[12] = hw_info->y_stride;
 	cmd[13] = hw_info->y_stride;
 	cmd[14] = hw_info->h_stride;
+
+	if (hw_info->type == JPEGENC_DMA_BUFF) {
+		info_off = 14;
+		cmd[info_off++] = hw_info->dma_buf_planes;
+		cmd[info_off++] = hw_info->dma_fd[0];
+		cmd[info_off++] = hw_info->dma_fd[1];
+		cmd[info_off++] = hw_info->dma_fd[2];
+	}
 
 	struct jpegenc_request_s request;
 	request.type = hw_info->type;
@@ -578,8 +582,7 @@ static size_t start_encoder(hw_jpegenc_t* hw_info) {
 	return size;
 }
 
-int hw_encode(jpegenc_handle_t handle, uint8_t *src, uint8_t *dst, enum jpegenc_mem_type_e mem_type, int dma_fd, uint32_t width, uint32_t height, int w_stride, int h_stride, int quality,
-		uint8_t format, uint8_t oformat, uint32_t* datalen) {
+int hw_encode(jpegenc_handle_t handle, jpegenc_frame_info_t frame_info, uint8_t *dst, uint32_t* datalen) {
 	int ret;
 
 #ifdef DEBUG_TIME
@@ -592,11 +595,11 @@ int hw_encode(jpegenc_handle_t handle, uint8_t *src, uint8_t *dst, enum jpegenc_
 		return -1;
 	}
 
-	if ((mem_type == JPEGENC_LOCAL_BUFF) && (src == NULL)) {
+	if ((frame_info.mem_type == JPEGENC_LOCAL_BUFF) && (frame_info.YCbCr[0] == 0)) {
 		printf("[%s:%d]param err!, src is NULL!\n", __FUNCTION__, __LINE__);
 		return -1;
 	}
-	if ((mem_type == JPEGENC_DMA_BUFF) && (dma_fd < 0)) {
+	if ((frame_info.mem_type == JPEGENC_DMA_BUFF) && (frame_info.YCbCr[0] < 0)) {
 		printf("[%s:%d]param err!, dma_fd < 0\n", __FUNCTION__, __LINE__);
 		return -1;
 	}
@@ -608,16 +611,15 @@ int hw_encode(jpegenc_handle_t handle, uint8_t *src, uint8_t *dst, enum jpegenc_
 	hw_jpegenc_t* hw_info = (hw_jpegenc_t*)handle;
 
 	hw_info->qtbl_id = 0;
-	hw_info->quality = quality;
-	hw_info->in_format = (enum jpegenc_frame_fmt_e) format;
-	hw_info->width = width;
-	hw_info->height = height;
-	hw_info->y_stride = w_stride;
-	hw_info->u_stride = w_stride;
-	hw_info->v_stride = w_stride;
-	hw_info->h_stride = h_stride;
+	hw_info->quality = frame_info.quality;
+	hw_info->in_format = (jpegenc_frame_fmt_e) frame_info.iformat;
+	hw_info->width = frame_info.width;
+	hw_info->height = frame_info.height;
+	hw_info->y_stride = frame_info.w_stride;
+	hw_info->u_stride = frame_info.w_stride;
+	hw_info->v_stride = frame_info.w_stride;
+	hw_info->h_stride = frame_info.h_stride;
 	hw_info->canvas = 0;
-	hw_info->src = src;
 	hw_info->dst = dst;
 	//printf("hw_info->dst=%p\n", dst);
 	hw_info->dst_size = *datalen;
@@ -641,11 +643,16 @@ int hw_encode(jpegenc_handle_t handle, uint8_t *src, uint8_t *dst, enum jpegenc_
 		hw_info->bpp = 12;
 	}
 
-	hw_info->type = mem_type;
-	hw_info->dma_fd = dma_fd;
-	//printf("hw_info->dma_fd=%d\n", dma_fd);
-	//hw_info->out_format = FMT_YUV420; //FMT_YUV422_SINGLE
-	hw_info->out_format = (enum jpegenc_frame_fmt_e) oformat;
+	hw_info->type = frame_info.mem_type;
+	if (hw_info->type == JPEGENC_LOCAL_BUFF) {
+		hw_info->src = (uint8_t *)frame_info.YCbCr[0];
+	} else if (hw_info->type == JPEGENC_DMA_BUFF) {
+		hw_info->dma_buf_planes = frame_info.plane_num;
+		hw_info->dma_fd[0] = frame_info.YCbCr[0];
+		hw_info->dma_fd[1] = frame_info.YCbCr[1];
+		hw_info->dma_fd[2] = frame_info.YCbCr[2];
+	}
+	hw_info->out_format = (jpegenc_frame_fmt_e) frame_info.oformat;
 
 	hw_info->jpeg_size = start_encoder(hw_info);
 

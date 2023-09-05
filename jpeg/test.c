@@ -36,114 +36,55 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 #include "jpegenc_api.h"
 #include "test_dma_api.h"
-#include <sys/time.h>
+
 //#include <media/stagefright/foundation/ALooper.h>
 //using namespace android;
 //#include <malloc.h>
 #define LOG_LINE() printf("[%s:%d]\n", __FUNCTION__, __LINE__)
 static int64_t GetNowUs() {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
 
-	return (int64_t)(tv.tv_sec) * 1000000 + (int64_t)(tv.tv_usec);
-}
-
-static unsigned copy_to_dmabuf(unsigned char *vaddr, unsigned char *yuv_buf, int width, int height, int w_stride, int h_stride, int iformat) {
-    unsigned offset = 0;
-    int luma_stride = 0, chroma_stride = 0;
-    int i = 0;
-    unsigned total_size = 0;
-    unsigned char* src = NULL;
-    unsigned char* dst = NULL;
-    int plane_num = 2;
-
-    if ((iformat == FMT_YUV420) || (iformat == FMT_YUV444_PLANE) || (iformat == FMT_RGB888_PLANE))
-        plane_num = 3;
-    else
-        plane_num = 2;
-
-    luma_stride = w_stride;
-
-    src = yuv_buf;
-    dst = vaddr;
-
-    if (luma_stride != width) {
-        for (i = 0; i < height; i++) {
-            memcpy(dst, src, width);
-            dst += luma_stride;
-            src += width;
-        }
-    } else {
-        memcpy(dst, src, height * width);
-    }
-
-    if (plane_num == 2) {
-        offset = h_stride * luma_stride;
-
-        chroma_stride = luma_stride;
-        printf("offset=%d\n", offset);
-
-        src = (unsigned char*) (yuv_buf + width * height);
-        dst = (unsigned char*) (vaddr + offset);
-
-        if (chroma_stride != width) {
-            for (i = 0; i < height / 2; i++) {
-                memcpy(dst, src, width);
-                dst += chroma_stride;
-                src += width;
-            }
-        } else {
-            memcpy(dst, src, width * height / 2);
-        }
-    } else if (plane_num == 3) {
-        if (iformat == FMT_YUV420) {
-            chroma_stride = luma_stride / 2;
-            offset = h_stride * luma_stride;
-
-            int i=0;
-            src = (unsigned char*) (yuv_buf + width * height);
-            dst = (unsigned char*) (vaddr + offset);
-
-            for (i = 0; i < height / 2; i++) {
-                memcpy(dst, src, width / 2);
-                src += width / 2;
-                dst += chroma_stride;
-            }
-
-            offset = h_stride * luma_stride + (chroma_stride * h_stride / 2);
-            printf("voff=%d\n", offset);
-
-            src = (unsigned char*) (yuv_buf + width * height * 5 / 4);
-            dst = (unsigned char*) (vaddr + offset);
-
-            for (i = 0; i < height / 2; i++) {
-                memcpy(dst, src, width / 2);
-                src += width / 2;
-                dst += chroma_stride;
-            }
-        } else {
-
-        }
-    }
-
-    printf("luma_stride=%d, h_stride=%d, hw_info->bpp=%d\n", luma_stride, h_stride, 12);
-
-    total_size = luma_stride * h_stride * 12 / 8;
-    return total_size;
+    return (int64_t)(tv.tv_sec) * 1000000 + (int64_t)(tv.tv_usec);
 }
 
 int main(int argc, const char *argv[])
 {
+    int outfd = -1;
+    FILE *fp = NULL;
+    int ret = -1;
+
     int width, height ,quality;
-    enum jpegenc_frame_fmt_e iformat;
-    enum jpegenc_frame_fmt_e oformat;
+    jpegenc_frame_fmt_e iformat;
+    jpegenc_frame_fmt_e oformat;
     struct usr_ctx_s ctx;
-    int shared_fd = -1;
-	int64_t encoding_time = 0;
-	int enc_frame=0;
-	int count=0;
+    int shared_fd[3] = {0};
+    int64_t encoding_time = 0;
+    int enc_frame = 0;
+    int framesize  = 0;
+    unsigned char *vaddr = NULL;
+    unsigned char *input[3] = { NULL };
+    jpegenc_frame_info_t frame_info;
+    int datalen = 0;
+    int num_planes = 1;
+
+    unsigned int output_size  = 0;
+    unsigned char *output_buffer = NULL;
+    unsigned char *inputBuffer = NULL;
+    unsigned int ysize;
+    unsigned int usize;
+    unsigned int vsize;
+    unsigned int uvsize;
+    jpegenc_result_e result = ENC_FAILED;
+    jpegenc_handle_t handle = 0;
+
     if (argc < 6) {
         printf("Amlogic AVC Encode API \n");
         printf("usage: output [srcfile] [outfile] [width] [height] [quality] [iformat] [oformat] [w_stride] [h_stride] [memtype]\n");
@@ -158,6 +99,7 @@ int main(int argc, const char *argv[])
         printf("         width alignment  : width alignment \n");
         printf("         height alignment : height alignment \n");
         printf("         memory type   : memory type for input data, 0:vmalloc, 3:dma\n");
+        //printf("         num_planes \t: used for dma buffer case. 2 : nv12/nv21, 3 : yuv420p(yv12/yu12)\n");
 
         return -1;
     } else {
@@ -175,14 +117,14 @@ int main(int argc, const char *argv[])
         return -1;
     }
     quality	= atoi(argv[5]);
-    iformat	= (enum jpegenc_frame_fmt_e)atoi(argv[6]);
-    oformat	= (enum jpegenc_frame_fmt_e)atoi(argv[7]);
+    iformat	= (jpegenc_frame_fmt_e)atoi(argv[6]);
+    oformat	= (jpegenc_frame_fmt_e)atoi(argv[7]);
     int w_alignment, h_alignment;
     w_alignment	= atoi(argv[8]);
     h_alignment	= atoi(argv[9]);
 
-    enum jpegenc_mem_type_e mem_type = (enum jpegenc_mem_type_e)atoi(argv[10]);
-    //int dma_fd = atoi(argv[11]);
+    jpegenc_mem_type_e mem_type = (jpegenc_mem_type_e)atoi(argv[10]);
+    //num_planes = atoi(argv[11]);
 
     printf("src url: %s \n", argv[1]);
     printf("out url: %s \n", argv[2]);
@@ -199,136 +141,285 @@ int main(int argc, const char *argv[])
     printf("align: %d->%d\n", width, w_stride);
     printf("align: %d->%d\n", height, h_stride);
 
-	jpegenc_handle_t handle = jpegenc_init();
-
-    if (handle == (long)NULL) {
-        printf("jpegenc_init failed\n");
-        return -1;
-    }
-
-    FILE *fin = fopen(argv[1], "rb");
-    if (!fin) {
-        printf("open input file %s failed: %s\n", argv[1], strerror(errno));
-        return -1;
-    }
-
-    int frame_size = width*height*3/2;
-    if (iformat == 1 || iformat == 5) {
-    	frame_size = width*height*3;
-    } else if (iformat == 0) {
-    	frame_size = width*height*2;
-    }
-
-    printf("frame_size=%d\n", frame_size);
-
-    uint8_t *yuv_buf = (uint8_t *)malloc(frame_size);
-    if (!yuv_buf) {
-        printf("alloc buffer for yuv failed\n");
-        return -1;
-    }
-
-    uint8_t *out_buf = (uint8_t *)malloc(1048576*10);
-    if (!out_buf) {
-        printf("alloc buffer for output jpeg failed\n");
-        return -1;
-    }
-
-    if (mem_type == JPEGENC_DMA_BUFF) {
-        int ret = create_ctx(&ctx);
-
-        if (ret < 0) {
-            printf("gdc create fail ret=%d\n", ret);
-            return -1;
-        }
-
-        int frame_size = w_stride * h_stride * 3 / 2;
-        shared_fd = alloc_dma_buffer(&ctx, INPUT_BUFF_TYPE, frame_size);
-
-        if (shared_fd < 0) {
-            printf("alloc fail ret=%d, len=%u\n", ret, frame_size);
-            return -1;
-        }
-
-        uint8_t *vaddr = (uint8_t *) ctx.i_buff[0];
-        if (!vaddr) {
-            printf("mmap failed,Not enough memory\n");
-            return -1;
-        }
-    }
-
-    int rd_size;
-
-    rd_size = fread(yuv_buf, 1, frame_size, fin);
-
-    printf("rd_size=%d, frame_size=%d\n", rd_size, frame_size);
-    if (rd_size < frame_size) {
-        printf("short read on yuv file\n");
-        return -1;
-    }
-
     if (mem_type != JPEGENC_LOCAL_BUFF && mem_type != JPEGENC_DMA_BUFF) {
         printf("unsupported mem type\n");
         return -1;
     }
+    memset(&frame_info, 0, sizeof(frame_info));
 
+    framesize = w_stride * h_stride * 3 / 2;
+    ysize = w_stride * h_stride;
+    usize = w_stride * h_stride / 4;
+    vsize = w_stride * h_stride / 4;
+    uvsize = w_stride * h_stride / 2;
+    if (iformat == 1 || iformat == 5) {
+        framesize = w_stride * h_stride * 3;
+    } else if (iformat == 0) {
+        framesize = w_stride * h_stride * 2;
+    }
+
+    printf("framesize=%d\n", framesize);
     if (mem_type == JPEGENC_DMA_BUFF) {
-        uint8_t *vaddr = (uint8_t *) ctx.i_buff[0];
-        if (!vaddr) {
-            printf("mmap failed,Not enough memory\n");
-            return -1;
+        ret = create_ctx(&ctx);
+        if (ret < 0) {
+            printf("gdc create fail ret=%d\n", ret);
+            goto exit;
+        }
+        if (num_planes == 3)
+        {
+            if (iformat != FMT_YUV420)
+            {
+                printf("error fmt %d\n", iformat);
+                goto exit;
+            }
+            ret = alloc_dma_buffer(&ctx, INPUT_BUFF_TYPE, ysize);
+            if (ret < 0)
+            {
+                printf("alloc fail ret=%d, len=%u\n", ret,
+                       ysize);
+                goto exit;
+            }
+            vaddr = (unsigned char *) ctx.i_buff[0];
+            if (!vaddr)
+            {
+                printf("mmap failed,Not enough memory\n");
+                goto exit;
+            }
+
+            shared_fd[0] = ret;
+            input[0] = vaddr;
+
+            ret = alloc_dma_buffer(&ctx, INPUT_BUFF_TYPE, usize);
+            if (ret < 0)
+            {
+                printf("alloc fail ret=%d, len=%u\n", ret,
+                       usize);
+                goto exit;
+            }
+            vaddr = (unsigned char *) ctx.i_buff[1];
+            if (!vaddr)
+            {
+                printf("mmap failed,Not enough memory\n");
+                goto exit;
+            }
+            shared_fd[1] = ret;
+            input[1] = vaddr;
+
+            ret = alloc_dma_buffer(&ctx, INPUT_BUFF_TYPE, vsize);
+            if (ret < 0)
+            {
+                printf("alloc fail ret=%d, len=%u\n", ret,
+                       vsize);
+                goto exit;
+            }
+            vaddr = (unsigned char *) ctx.i_buff[2];
+            if (!vaddr)
+            {
+                printf("mmap failed,Not enough memory\n");
+                goto exit;
+            }
+
+            shared_fd[2] = ret;
+            input[2] = vaddr;
+        } else if (num_planes == 2)
+        {
+            ret = alloc_dma_buffer(&ctx, INPUT_BUFF_TYPE, ysize);
+            if (ret < 0)
+            {
+                printf("alloc fail ret=%d, len=%u\n", ret,
+                       ysize);
+                goto exit;
+            }
+            vaddr = (unsigned char *) ctx.i_buff[0];
+            if (!vaddr)
+            {
+                printf("mmap failed,Not enough memory\n");
+                goto exit;
+            }
+            shared_fd[0] = ret;
+            input[0] = vaddr;
+            if (iformat != FMT_NV12 && iformat != FMT_NV21)
+            {
+                printf("error fmt %d\n", iformat);
+                goto exit;
+            }
+            ret = alloc_dma_buffer(&ctx, INPUT_BUFF_TYPE, uvsize);
+            if (ret < 0)
+            {
+                printf("alloc fail ret=%d, len=%u\n", ret,
+                       uvsize);
+                goto exit;
+            }
+            vaddr = (unsigned char *) ctx.i_buff[1];
+            if (!vaddr)
+            {
+                printf("mmap failed,Not enough memory\n");
+                goto exit;
+            }
+            shared_fd[1] = ret;
+            input[1] = vaddr;
+        } else if (num_planes == 1)
+        {
+            ret =
+                alloc_dma_buffer(&ctx, INPUT_BUFF_TYPE, framesize);
+            if (ret < 0)
+            {
+                printf("alloc fail ret=%d, len=%u\n", ret,
+                       framesize);
+                goto exit;
+            }
+            vaddr = (unsigned char *) ctx.i_buff[0];
+            if (!vaddr)
+            {
+                printf("mmap failed,Not enough memory\n");
+                goto exit;
+            }
+            shared_fd[0] = ret;
+            input[0] = vaddr;
         }
 
-        copy_to_dmabuf(vaddr, yuv_buf, width, height, w_stride, h_stride, iformat);
-        sync_cpu(&ctx);
+        frame_info.plane_num = num_planes;
+        frame_info.YCbCr[0] = shared_fd[0];
+        frame_info.YCbCr[1] = shared_fd[1];
+        frame_info.YCbCr[2] = shared_fd[2];
+    } else {
+        inputBuffer = (unsigned char *) malloc(framesize);
+        if (inputBuffer == NULL) {
+            printf("Can not allocat inputBuffer\n");
+            goto exit;
+        }
+        frame_info.YCbCr[0] = (ulong) (inputBuffer);
+        frame_info.YCbCr[1] =
+            (ulong) (inputBuffer + ysize);
+        frame_info.YCbCr[2] =
+            (ulong) (inputBuffer + ysize + usize);
     }
 
-    int64_t t_1=GetNowUs();
+    output_size = 1024 * 1024 * 10;
+    output_buffer = (unsigned char *)malloc(output_size);
+    if (!output_buffer) {
+        printf("alloc buffer for output jpeg failed\n");
+        goto exit;
+    }
 
-#if 0
-    int datalen = 0;
-    while (1)
+    fp = fopen(argv[1], "rb");
+    if (!fp) {
+        printf("open input file %s failed: %s\n", argv[1], strerror(errno));
+        goto exit;
+    }
+    outfd = open(argv[2], O_CREAT | O_RDWR | O_TRUNC, 0644);
+    if (outfd < 0)
     {
-
-        datalen = jpegenc_encode(handle, width, height, w_stride, h_stride, quality, iformat, oformat, mem_type, shared_fd, yuv_buf, out_buf);
+        printf("open dist file error!\n");
+        goto exit;
     }
-#else
-    int datalen = jpegenc_encode(handle, width, height, w_stride, h_stride, quality, iformat, oformat, mem_type, shared_fd, yuv_buf, out_buf);
-#endif
-    int64_t t_2=GetNowUs();
+
+    frame_info.width = width;
+    frame_info.height = height;
+    frame_info.w_stride = w_stride;
+    frame_info.h_stride = h_stride;
+    frame_info.quality = quality;
+    frame_info.iformat = iformat;
+    frame_info.oformat = oformat;
+    frame_info.mem_type = mem_type;
+
+    handle = jpegenc_init();
+
+    if (handle == (long)NULL) {
+        printf("jpegenc_init failed\n");
+        goto exit;
+    }
+
+    if (mem_type == JPEGENC_DMA_BUFF) {	// read data to dma buf vaddr
+        if (num_planes == 1)
+        {
+            if (fread(input[0], 1, framesize, fp) !=
+                framesize)
+            {
+                printf("read input file error!\n");
+                goto exit;
+            }
+        } else if (num_planes == 2)
+        {
+            if (fread(input[0], 1, ysize, fp) != ysize)
+            {
+                printf("read input file error!\n");
+                goto exit;
+            }
+            if (fread(input[1], 1, uvsize, fp) != uvsize)
+            {
+                printf("read input file error!\n");
+                goto exit;
+            }
+        } else if (num_planes == 3)
+        {
+            if (fread(input[0], 1, ysize, fp) != ysize)
+            {
+                printf("read input file error!\n");
+                goto exit;
+            }
+            if (fread(input[1], 1, usize, fp) != usize)
+            {
+                printf("read input file error!\n");
+                goto exit;
+            }
+            if (fread(input[2], 1, vsize, fp) != vsize)
+            {
+                printf("read input file error!\n");
+                goto exit;
+            }
+        }
+    } else {
+        if (fread(inputBuffer, 1, framesize, fp) != framesize)
+        {
+            printf("read input file error!\n");
+            goto exit;
+        }
+    }
+    memset(output_buffer, 0, output_size);
+
+    //int64_t t_1=GetNowUs();
+
+    result = jpegenc_encode(handle, frame_info, output_buffer, &datalen);
+
+    //int64_t t_2=GetNowUs();
     //fprintf(stderr, "jpegenc_encode time: %lld\n", t_2-t_1);
-
-    if (datalen == 0) {
-        printf("jpegenc_encode failed\n");
-        return -1;
+    if (result != ENC_FAILED) {
+        write(outfd, (unsigned char *)output_buffer, datalen);
+        enc_frame++;
+        //encoding_time+=t_2-t_1;
     }
-    encoding_time+=t_2-t_1;
-    enc_frame++;
-
-    FILE *fout = fopen(argv[2], "wb");
-    if (!fout) {
-        printf("open file for writting jpeg file failed\n");
-        return -1;
-    }
-    fwrite(out_buf, 1, datalen, fout);
-    fclose(fout);
 
     //fprintf(stderr, "encode time:%lld, fps:%3.1f\n", encoding_time, enc_frame*1.0/(encoding_time/1000000.0));
 
-    jpegenc_destroy(handle);
-    if (mem_type == JPEGENC_DMA_BUFF) {
-        if (shared_fd >= 0)
-            close(shared_fd);
+exit:
+    if (handle)
+        jpegenc_destroy(handle);
+
+    if (outfd >= 0)
+        close(outfd);
+
+    if (fp)
+        fclose(fp);
+
+    if (output_buffer != NULL)
+        free(output_buffer);
+
+    if (mem_type == JPEGENC_DMA_BUFF)
+    {
+        if (shared_fd[0] >= 0)
+            close(shared_fd[0]);
+
+        if (shared_fd[1] >= 0)
+            close(shared_fd[1]);
+
+        if (shared_fd[2] >= 0)
+            close(shared_fd[2]);
+
         destroy_ctx(&ctx);
+    } else {
+        if (inputBuffer)
+            free(inputBuffer);
     }
-
-    free(yuv_buf);
-    free(out_buf);
-    yuv_buf = NULL;
-    out_buf = NULL;
-
-    fclose(fin);
-
-
-
-	return 0;
+    return 0;
 }

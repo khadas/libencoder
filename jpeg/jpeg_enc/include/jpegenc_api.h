@@ -8,15 +8,15 @@ extern "C" {
 #include <stdint.h>
 #define jpegenc_handle_t long
 
-enum jpegenc_mem_type_e {
+typedef enum {
 	JPEGENC_LOCAL_BUFF = 0,
 	JPEGENC_CANVAS_BUFF,
 	JPEGENC_PHYSICAL_BUFF,
 	JPEGENC_DMA_BUFF,
 	JPEGENC_MAX_BUFF_TYPE
-};
+}jpegenc_mem_type_e;
 
-enum jpegenc_frame_fmt_e {
+typedef enum {
 	FMT_YUV422_SINGLE = 0,
 	FMT_YUV444_SINGLE,
 	FMT_NV21,
@@ -28,7 +28,26 @@ enum jpegenc_frame_fmt_e {
 	FMT_RGB565,
 	FMT_RGBA8888,
 	MAX_FRAME_FMT
-};
+}jpegenc_frame_fmt_e;
+
+typedef struct jpegenc_frame_info
+{
+	int width;
+	int height;
+	int w_stride;
+	int h_stride;
+	int quality;
+	jpegenc_frame_fmt_e iformat;
+	jpegenc_frame_fmt_e oformat;
+	jpegenc_mem_type_e mem_type;
+	unsigned long YCbCr[3];
+	int plane_num;
+} jpegenc_frame_info_t;
+
+typedef enum {
+	ENC_FAILED = -1,
+	ENC_SUCCESS,
+}jpegenc_result_e;
 
 /**
  * init jpeg encoder
@@ -54,9 +73,7 @@ jpegenc_handle_t jpegenc_init();
  *@param : out_buf: memory buffer addr for output jpeg file data
  *@return : the length of encoded jpge file data, 0 if encoding failed
  */
-int jpegenc_encode(jpegenc_handle_t handle, int width, int height, int w_stride, int h_stride, int quality,
-		enum jpegenc_frame_fmt_e iformat, enum jpegenc_frame_fmt_e oformat, enum jpegenc_mem_type_e mem_type, int dma_fd, uint8_t *in_buf,
-		uint8_t *out_buf);
+jpegenc_result_e jpegenc_encode(jpegenc_handle_t handle, jpegenc_frame_info_t frame_info, unsigned char *out, int *out_size);
 
 /**
  * release jpeg encoder
