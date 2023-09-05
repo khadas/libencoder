@@ -16,9 +16,6 @@ typedef struct MemallocParams_t{
 
 
 
-
-
-
 int memalloc_release(int  filp);
 
 
@@ -45,10 +42,6 @@ int encmem_vce_probe(unsigned int  phy_mem_address,unsigned int phy_mem_size);
 int encmem_vce_remove();
 
 
-
-int enc_memallc_init(void);
-
-void enc_memallc_exit(void);
 
 
 

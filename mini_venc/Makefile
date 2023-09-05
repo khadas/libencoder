@@ -17,7 +17,7 @@ ARCH=arm
 
 HEX2BIN = hex2bin.c
 
-MINI_ENC += mini_enc_regs.c
+
 MINI_ENC += mini_test.c
 
 
@@ -26,16 +26,12 @@ MINI_ENC += mini_memory_pool.c
 
 DATA += vce_vcmd0.bin
 DATA += vce_vcmd1.bin
-DATA += header_2560p.bin
+DATA += header_2048_1536.bin
 
-#DATA += vce_vcmd2.bin
-#DATA += vce_input_raw_data_frm0.bin
-#DATA += vce_input_raw_data_frm1.bin
-#DATA += vce_input_raw_data_frm2.bin
-#
+
 #source search path
 vpath %.c
-vpath %.c ./mini_enc_sample ./hex2bin
+vpath %.c ./mini_enc_sample
 vpath %.bin ./data
 
 TEST_OBJ +=$(MINI_ENC:.c=.o)
@@ -50,7 +46,6 @@ PWD = $(shell pwd)
 
 DRIVER := $(PWD)/driver
 
-CFLAGS = -static
 INCLUDE = -I./inc
 
 TARGET=$(OBJ_PATH)/mini_enc_sample
@@ -66,7 +61,7 @@ tools:
 	@gcc hex2bin/hex2bin.c -o $(OBJ_PATH)/hex2bin
 	@echo build/hex2bin
 
-mini_enc_sample: tools $(ALL_OBJ_POS) $(ALL_BIN_POS)
+mini_enc_sample:  $(ALL_OBJ_POS) $(ALL_BIN_POS)
 	@$(CC) $(CFLAGS) $(ALL_OBJ_POS) $(ALL_BIN_POS) -o $(TARGET)
 	@echo build/mini_enc_sample
 

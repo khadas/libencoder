@@ -9,62 +9,14 @@
  */
 
 /* needed for __init,__exit directives */
-#include <linux/ioctl.h>
-/* needed for remap_page_range
- *   SetPageReserved
- *   ClearPageReserved
- */
-#include <linux/mm.h>
-/* obviously, for kmalloc */
-#include <linux/slab.h>
-/* for struct file_operations, register_chrdev() */
-#include <linux/fs.h>
-/* standard error codes */
-#include <linux/errno.h>
-#include <linux/module.h>
 
-#include <linux/ioctl.h>
-#include <linux/kernel.h>
-#include <linux/module.h>
-
-#include <linux/moduleparam.h>
-/* request_irq(), free_irq() */
-#include <linux/interrupt.h>
-#include <linux/sched.h>
-
-#include <linux/semaphore.h>
-#include <linux/spinlock.h>
-/* needed for virt_to_phys() */
-#include <asm/io.h>
-#include <linux/pci.h>
-#include <linux/uaccess.h>
-#include <linux/ioport.h>
-
-#include <asm/irq.h>
-
-#include <linux/version.h>
-#include <linux/vmalloc.h>
-#include <linux/timer.h>
-#include <linux/delay.h>
 
 /* our own stuff */
 #include <linux/platform_device.h>
-#include <linux/err.h>
-#include <linux/io.h>
 #include <linux/interrupt.h>
-#include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/of.h>
-#include <linux/slab.h>
-#include <linux/sysfs.h>
-
 #include <linux/dma-mapping.h>
-#include <linux/of_platform.h>
-#include <linux/of_reserved_mem.h>
-#include <linux/moduleparam.h>
-#include <linux/of_address.h>
-#include <linux/kthread.h>
-#include <linux/ioport.h>
 
 #define HANTRO_IOC_MAGIC 'k'
 
@@ -95,29 +47,30 @@
 #define HW_VCMD_SIZE   0x1000
 
 //FIXED ME
-#define ALLOC_PHY_MEM_ADDR   0x60000000
-#define ALLOC_PHY_MEM_SIZE   0x2e00000   //30M byte
+#define ALLOC_PHY_MEM_ADDR   0x4000000
+#define ALLOC_PHY_MEM_SIZE   0xc00000   //30M byte
 
 
 
 
 
 
-#define REG_ID            0x0
+#define REG_ID			0x0
 
-#define REG_INIT        0x4
-#define HW_ENABLE        BIT(0)
+#define REG_INIT		0x4
+#define HW_ENABLE		BIT(0)
 
-#define REG_CMD            0x8
+#define REG_CMD			0x8
 
-#define REG_INT_STATUS     0x
-#define IRQ_ENABLED        BIT(0)
-#define IRQ_BUF_DEQ        BIT(1)
-#define IRQ_FRAME_DONE     BIT(2)
+#define REG_INT_STATUS	 0x
+#define IRQ_ENABLED		BIT(0)
+#define IRQ_BUF_DEQ		BIT(1)
+#define IRQ_FRAME_DONE	 BIT(2)
+#define IRQ_BUS_ERR	 BIT(3)
 
-#define REG_IRQ                0x311004
-#define REG_ENC_SIZE           0x311024
-#define REG_ENC_ADDR           0x311020
+#define REG_IRQ				0x311004
+#define REG_ENC_SIZE		   0x311024
+#define REG_ENC_ADDR		   0x311020
 
 #define DEVICE_NAME "hantro"
 #define CLASS_NAME "venc"
@@ -130,10 +83,9 @@
 
 
 
-#define LINMEM_ALIGN    4096
+#define LINMEM_ALIGN	4096
 #define NEXT_ALIGNED(x) ((((ptr_t)(x)) + LINMEM_ALIGN-1)/LINMEM_ALIGN*LINMEM_ALIGN)
 #define NEXT_ALIGNED_SYS(x, align) ((((ptr_t)(x)) + align - 1) / align * align)
-#define pr_log(format,...) printk(""format"\n", ##__VA_ARGS__)
 
 typedef struct{
 	unsigned int size;
@@ -147,15 +99,11 @@ int irq = -1;
 unsigned int print_level;
 unsigned long vc9000e_reg_base;
 unsigned long reg_base = HW_VCMD_BASE;
-#define enc_pr(level, x...) \
-	do { \
-		if (level >= print_level) \
-			printk(x); \
-	} while (0)
+
 
 struct virt_hantro {
-    struct device *dev;
-    void __iomem *base;
+	struct device *dev;
+	void __iomem *base;
 };
 
 static struct device*  device;
@@ -167,77 +115,82 @@ static hantro_buffer_t hw_regs;
 static DEFINE_MUTEX(hantro_mutex);
 
 static ssize_t vf_show_id(struct device *dev,
-              struct device_attribute *attr, char *buf)
+			  struct device_attribute *attr, char *buf)
 {
-    struct virt_hantro *vf = dev_get_drvdata(dev);
-    u32 val = readl_relaxed(vf->base + REG_ID);
+	struct virt_hantro *vf = dev_get_drvdata(dev);
+	u32 val = readl_relaxed(vf->base + REG_ID);
 
-    return scnprintf(buf, PAGE_SIZE, "Chip ID: 0x%.x\n", val);
+	return scnprintf(buf, PAGE_SIZE, "Chip ID: 0x%.x\n", val);
 }
 
 static ssize_t vf_show_bitstream_dump(struct device *dev,
-               struct device_attribute *attr, char *buf)
+			   struct device_attribute *attr, char *buf)
 {
-    return 0;
+	return 0;
 }
 
 static ssize_t vf_store_bitstream_dump(struct device *dev,
-                struct device_attribute *attr,
-                const char *buf, size_t len)
+				struct device_attribute *attr,
+				const char *buf, size_t len)
 {
-    struct virt_hantro *vf = dev_get_drvdata(dev);
-    unsigned long val;
+	struct virt_hantro *vf = dev_get_drvdata(dev);
+	unsigned long val;
 
-    if (kstrtoul(buf, 0, &val))
-        return -EINVAL;
+	if (kstrtoul(buf, 0, &val))
+		return -EINVAL;
 
-    writel_relaxed(val, vf->base + REG_CMD);
+	writel_relaxed(val, vf->base + REG_CMD);
 
-    return len;
+	return len;
 }
 
 static DEVICE_ATTR(id, S_IRUGO, vf_show_id, NULL);
 static DEVICE_ATTR(bitstream_dump, S_IRUGO | S_IWUSR, vf_show_bitstream_dump, vf_store_bitstream_dump);
 
 static struct attribute *vf_attributes[] = {
-    &dev_attr_id.attr,
-    &dev_attr_bitstream_dump.attr,
-    NULL,
+	&dev_attr_id.attr,
+	&dev_attr_bitstream_dump.attr,
+	NULL,
 };
 
 static const struct attribute_group vf_attr_group = {
-    .attrs = vf_attributes,
+	.attrs = vf_attributes,
 };
 
 extern uint32_t frm_num;
 
 
-
 static irqreturn_t vf_irq_handler(int irq, void *data)
 {
-	#if 1
-    struct virt_hantro *vf = (struct virt_hantro *)data;
-    u32 status;
+	#if  1
+	struct virt_hantro *vf = (struct virt_hantro *)data;
+	u32 status;
 	u32 status_vcmd1 = 0;
 	u32 status_vcmd2 = 0;
-    status = readl_relaxed(vf->base + REG_IRQ);
-	printk("\n............vf_irq_handler,status core = 0x%x\n",status);
-
+	status = readl_relaxed(vf->base + REG_IRQ);//0xfe311004
 	status_vcmd1 = readl_relaxed(vf->base + 0x310008);
-	printk("\n............vf_irq_handler,status_vcmd 0x8 = 0x%x\n",status_vcmd1);
+	//printk("\n............vf_irq_handler,status_vcmd 0x8 = 0x%x\n",status_vcmd1);
 	status_vcmd2 = readl_relaxed(vf->base + 0x310044);
-	printk("\n............vf_irq_handler,status_vcmd 0x44 = 0x%x\n",status_vcmd2);
+	//printk("\n............vf_irq_handler,status_vcmd 0x44 = 0x%x\n",status_vcmd2);
 
 	if (status & IRQ_FRAME_DONE)
 	{
-		printk( "irq frame done, frame size : %d\n", readl_relaxed(vf->base + REG_ENC_SIZE));
-        writel_relaxed(0x4, vf->base + REG_IRQ);
+		//printk( "irq frame done, frame size : %d\n", readl_relaxed(vf->base + REG_ENC_SIZE));
+		writel_relaxed(0x8, vf->base + REG_IRQ);
 	}
 
-    if (status & IRQ_BUF_DEQ)
-        printk( "Command buffer is dequeued\n");
+	if (status & IRQ_BUS_ERR)
+	{
+		//printk( "Error response from bus, frame size : %d\n", readl_relaxed(vf->base + REG_ENC_SIZE));
+		writel_relaxed(0x4, vf->base + REG_IRQ);
+	}
+
+
+
+
+
 	#endif
-    return IRQ_HANDLED;
+	return IRQ_HANDLED;
 }
 
 /* executed once the device is opened.
@@ -245,16 +198,16 @@ static irqreturn_t vf_irq_handler(int irq, void *data)
  */
 static int hantro_open(struct inode *inodep, struct file *filep)
 {
-    int ret = 0;
+	int ret = 0;
 
 	if (!mutex_trylock(&hantro_mutex)) {
 		pr_alert("hantro: device busy!\n");
-        ret = -EBUSY;
-        goto out;
-    }
+		ret = -EBUSY;
+		goto out;
+		}
 
 out:
-    return ret;
+	return ret;
 }
 
 /*  executed once the device is closed or releaseed by userspace
@@ -263,23 +216,23 @@ out:
  */
 static int hantro_release(struct inode *inodep, struct file *filep)
 {
-    mutex_unlock(&hantro_mutex);
-    return 0;
+	mutex_unlock(&hantro_mutex);
+	return 0;
 }
 
 static int hantro_mmap(struct file *filp, struct vm_area_struct *vma)
 {
-    int ret = 0;
-    unsigned long size = (unsigned long)(vma->vm_end - vma->vm_start);
+	int ret = 0;
+	unsigned long size = (unsigned long)(vma->vm_end - vma->vm_start);
 
-    vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
-    ret = remap_pfn_range(vma, vma->vm_start, vma->vm_pgoff, size, vma->vm_page_prot);
+	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
+	ret = remap_pfn_range(vma, vma->vm_start, vma->vm_pgoff, size, vma->vm_page_prot);
 	return ret;
 }
 
 static long hantro_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 {
-    int ret = 0;
+	int ret = 0;
 
 	switch (cmd)
 	{
@@ -302,7 +255,7 @@ static ssize_t vcmd_ctrl_show(struct class *cla,
 				struct class_attribute *attr, char *buf)
 {
 	char *pbuf = buf;
-    unsigned int *vcmd_buffer=(unsigned int *)sh_mem;
+	unsigned int *vcmd_buffer=(unsigned int *)sh_mem;
 	pbuf +=  sprintf(pbuf, "amrisc registers show: size: 0x%08x\n", vcmd_buffer[0]);
 	pbuf +=  sprintf(pbuf, "amrisc registers show: size: 0x%08x\n", vcmd_buffer[520]);
 	return pbuf - buf;
@@ -331,106 +284,104 @@ static const struct file_operations hantro_fops = {
 
 static int vf_probe(struct platform_device *pdev)
 {
-    struct device *dev = &pdev->dev;
-    unsigned int *kvirt_addr = 0;
-    struct virt_hantro *vf;
-    int ret = 0;
+	struct device *dev = &pdev->dev;
+	unsigned int *kvirt_addr = 0;
+	struct virt_hantro *vf;
+	int ret = 0;
 
 
 
 
 
-	enc_pr(LOG_DEBUG, "vf_probe\n");
-    vf = devm_kzalloc(dev, sizeof(*vf), GFP_KERNEL);
-    if (!vf)
-        return -ENOMEM;
+	vf = devm_kzalloc(dev, sizeof(*vf), GFP_KERNEL);
+	if (!vf)
+		return -ENOMEM;
 
 
 
-    vf->dev = dev;
+	vf->dev = dev;
 	//remaping the system base address
-    vf->base = devm_ioremap(dev, WRAP_SOC_SYSTEM_BASE, WRAP_SOC_SYSTEM_SIZE);
+	vf->base = devm_ioremap(dev, WRAP_SOC_SYSTEM_BASE, WRAP_SOC_SYSTEM_SIZE);
 	//end
-    pr_log("base register base addr 0xfe000000,kernel virtual addr 0x%lx\n", (unsigned long)vf->base);
 
 
 
 	if (!vf->base) {
-        return -EINVAL;
-    }
-
+		return -EINVAL;
+	}
 
 	//system bringup
-    kvirt_addr = devm_ioremap(dev, WRAP_RESET_CTL, 4);
-    *kvirt_addr = 0x2c0000;
-    kvirt_addr = devm_ioremap(dev, WRAP_RESET_SEL, 4);
-    *kvirt_addr = 0;
-    kvirt_addr = devm_ioremap(dev, HW_RESET_CTL, 4);
-    *kvirt_addr = 2;
-    kvirt_addr = devm_ioremap(dev, WRAP_CLOCK_CTL, 4);
-    *kvirt_addr = 0x6000400;
-    kvirt_addr = devm_ioremap(dev, WRAP_CLOCK_CTL, 4);
-    *kvirt_addr = 0x7000500;
+	kvirt_addr = devm_ioremap(dev, WRAP_RESET_CTL, 4);
+	*kvirt_addr = 0x2c0000;
+
+	kvirt_addr = devm_ioremap(dev, WRAP_RESET_SEL, 4);
+	*kvirt_addr = 0;
+	kvirt_addr = devm_ioremap(dev, HW_RESET_CTL, 4);
+	*kvirt_addr = 2;
+	#if 1
+	kvirt_addr = devm_ioremap(dev, WRAP_CLOCK_CTL, 4);
+	*kvirt_addr = 0x6000400;
+	kvirt_addr = devm_ioremap(dev, WRAP_CLOCK_CTL, 4);
+	*kvirt_addr = 0x7000500;
+	//end
+	#endif
+	//log
+	kvirt_addr = devm_ioremap(dev, HW_VCMD_BASE, 4);
+	////printk(  "hantro -sw_HW_ID: 0x%x\n", *kvirt_addr);
+
+	kvirt_addr = devm_ioremap(dev, HW_VCMD_BASE+4, 4);
+	////printk(   "hantro -sw_HW_Version: 0x%x\n", *kvirt_addr);
+
+
 	//end
 
 	/* get interrupt resource */
 	irq = platform_get_irq_byname(pdev, "vc9000e_irq0");
 
-	enc_pr(LOG_DEBUG, "hantro -irq: %d\n", irq);
 
 	if (irq < 0) {
-		enc_pr(LOG_ERROR, "get hantro irq resource error\n");
-        return -EFAULT;
+		return -EFAULT;
 	} else {
-        ret = request_irq(irq, vf_irq_handler, IRQF_SHARED, "vc9000e_irq0", (void *)(vf));
+		ret = request_irq(irq, vf_irq_handler, IRQF_SHARED, "vc9000e_irq0", (void *)(vf));
 
 	if (ret) {
-			enc_pr(LOG_ERROR, "Failed to register irq handler\n");
 			return -EFAULT;
-        }
-    }
-	enc_pr(LOG_DEBUG, "request_irq Done -irq: %d\n", irq);
+		}
+	}
 
 
-	enc_pr(LOG_DEBUG, "device driver:register_chrdev\n");
-    major = register_chrdev(0, DEVICE_NAME, &hantro_fops);
+	major = register_chrdev(0, DEVICE_NAME, &hantro_fops);
 
-    printk("probe major %d\n", major);
-    if (major < 0) {
-        pr_info("hantro: fail to register major number!");
-        ret = major;
-        goto out;
-    }
+	////printk("probe major %d\n", major);
+	if (major < 0) {
+		ret = major;
+		goto out;
+	}
 
-	enc_pr(LOG_DEBUG, "device driver:class_register\n");
 
 	ret = class_register(&venc_class);
 	if (ret < 0) {
-		pr_info("hantro: error create venc class!");
 		return ret;
 	}
 
-    device = device_create(&venc_class, NULL, MKDEV(major, 0), NULL, DEVICE_NAME);
-    if (IS_ERR(device)) {
-        class_destroy(&venc_class);
-        unregister_chrdev(major, DEVICE_NAME);
-        ret = PTR_ERR(device);
-        goto out;
-    }
-	enc_pr(LOG_DEBUG, "device driver:device_create\n");
+	device = device_create(&venc_class, NULL, MKDEV(major, 0), NULL, DEVICE_NAME);
+	if (IS_ERR(device)) {
+		class_destroy(&venc_class);
+		unregister_chrdev(major, DEVICE_NAME);
+		ret = PTR_ERR(device);
+		goto out;
+	}
 
-    mutex_init(&hantro_mutex);
+	mutex_init(&hantro_mutex);
 
-    platform_set_drvdata(pdev, vf);
-
-    ret = sysfs_create_group(&dev->kobj, &vf_attr_group);
+	platform_set_drvdata(pdev, vf);
 
 
-    // hw register map
-    hw_regs.phys_addr       = reg_base;
-    hw_regs.size            = HW_VCMD_SIZE;
-    vc9000e_reg_base        = (unsigned long)devm_ioremap(dev, hw_regs.phys_addr, hw_regs.size);
-    pr_log("vc9000e_reg_base register base addr 0x%lx,kernel virtual addr 0x%lx\n", hw_regs.phys_addr,vc9000e_reg_base);
+
+	// hw register map
+	hw_regs.phys_addr	   = reg_base;
+	hw_regs.size			= HW_VCMD_SIZE;
+	vc9000e_reg_base		= (unsigned long)devm_ioremap(dev, hw_regs.phys_addr, hw_regs.size);
 
 	//encoder phy address
 	common_buffer.phys_addr = ALLOC_PHY_MEM_ADDR;
@@ -439,55 +390,50 @@ static int vf_probe(struct platform_device *pdev)
 
 
 out:
-    return ret;
+	return ret;
 }
 
 static int vf_remove(struct platform_device *pdev)
 {
-    struct virt_hantro *vf = platform_get_drvdata(pdev);
-	enc_pr(LOG_DEBUG, "vf_remove\n");
+	struct virt_hantro *vf = platform_get_drvdata(pdev);
 
-    free_irq(irq, vf);
-    sysfs_remove_group(&vf->dev->kobj, &vf_attr_group);
+	free_irq(irq, vf);
+	sysfs_remove_group(&vf->dev->kobj, &vf_attr_group);
 
-    if (device)
+	if (device)
 		device_destroy(&venc_class, MKDEV(major, 0));
 
 	class_destroy(&venc_class);
-	enc_pr(LOG_DEBUG, "venc_class\n");
 
 	unregister_chrdev(major, DEVICE_NAME);
-    return 0;
+	return 0;
 }
 
 static const struct of_device_id vf_of_match[] = {
-    { .compatible = "hantro", },
-    { }
+	{ .compatible = "hantro", },
+	{ }
 };
 
 static struct platform_driver hantro_driver = {
-    .probe = vf_probe,
-    .remove = vf_remove,
-    .driver = {
-        .name = "hantro",
-        .owner = THIS_MODULE,
-        .of_match_table = vf_of_match,
-    },
+	.probe = vf_probe,
+	.remove = vf_remove,
+	.driver = {
+		.name = "hantro",
+		.owner = THIS_MODULE,
+		.of_match_table = vf_of_match,
+	},
 };
 
 static s32 __init hantro_init(void)
 {
 	s32 res;
 
-	enc_pr(LOG_DEBUG, "opanera hantro_init\n");
 	res = platform_driver_register(&hantro_driver);
-	enc_pr(LOG_DEBUG, "hantro_init ret %d\n", res);
 	return res;
 }
 
 static void __exit hantro_exit(void)
 {
-	enc_pr(LOG_DEBUG, "opanera hantro_exit\n");
 	platform_driver_unregister(&hantro_driver);
 }
 
