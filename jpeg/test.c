@@ -152,7 +152,7 @@ int main(int argc, const char *argv[])
     usize = w_stride * h_stride / 4;
     vsize = w_stride * h_stride / 4;
     uvsize = w_stride * h_stride / 2;
-    if (iformat == 1 || iformat == 5) {
+    if (iformat == 1 || iformat == 5 || iformat == 6) {
         framesize = w_stride * h_stride * 3;
     } else if (iformat == 0) {
         framesize = w_stride * h_stride * 2;

@@ -76,6 +76,8 @@ jpegenc_result_e jpegenc_encode(jpegenc_handle_t handle, jpegenc_frame_info_t fr
 		frame_info.iformat = FMT_YUV420;
 	else if (frame_info.iformat == 5)
 		frame_info.iformat = FMT_YUV444_PLANE;
+	else if (frame_info.iformat == 6)
+		frame_info.iformat = FMT_RGB888;
 
 	if (frame_info.oformat == 0)
 		frame_info.oformat = FMT_YUV420;     //4
