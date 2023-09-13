@@ -70,7 +70,13 @@ int AmlVencInstWave5::AVCProfileConvert(C2Config::profile_t profile) {
 
 
 bool AmlVencInstWave5::init() {
+    stVencParam VencParam;
     ALOGD("wave521 fake init action!");
+
+    memset(&VencParam,0,sizeof(VencParam));
+    mVencParamInst->GetVencParam(VencParam);
+    mActualFormat = PixelFormatConvert(VencParam.PixFormat);
+    ALOGD("fake init colorfmt:%d",mActualFormat);
     return true;
 }
 
@@ -150,7 +156,9 @@ void AmlVencInstWave5::ExtraInit(amvenc_info_t &VencInfo,amvenc_qp_param_t &QpPa
 void AmlVencInstWave5::ExtraPreProcess(stInputFrameInfo &InputFrameInfo) {
     ALOGE("ExtraPreProcess call init for parent");
     if (!mIsInit) { //for wave521 cannot support colorformat change after init
-        mActualFormat = InputFrameInfo.colorFmt;
+        if (CANVAS != InputFrameInfo.bufType) {
+            mActualFormat = InputFrameInfo.colorFmt;
+        }
         InitEncoder();
         mIsInit = true;
     }

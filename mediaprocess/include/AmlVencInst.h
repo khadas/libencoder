@@ -39,7 +39,6 @@ public:
     virtual void ExtraProcess();
     virtual void ExtraPreProcess(stInputFrameInfo &InputFrameInfo);
 private:
-    amvenc_img_format_t PixelFormatConvert(int FormatIn);
     bool IsYUV420(const C2GraphicView &view);
     bool IsNV12(const C2GraphicView &view);
     bool IsNV21(const C2GraphicView &view);
@@ -53,6 +52,7 @@ private:
     c2_status_t genVuiParam(stVencParam VencParam,int32_t *primaries,int32_t *transfer,int32_t *matrixCoeffs,bool *range);
 protected:
     bool InitEncoder();
+    amvenc_img_format_t PixelFormatConvert(int FormatIn);
 
 protected:
     IAmlVencParam *mVencParamInst;
