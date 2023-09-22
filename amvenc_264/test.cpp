@@ -660,6 +660,9 @@ int main(int argc, const char *argv[])
     for (iloop = 0;iloop < inst_num;iloop++)
     {
         pthread_create(&tid[iloop], NULL, encode_thread, &config_param[iloop]);
+    }
+    for (iloop = 0;iloop < inst_num;iloop++)
+    {
         pthread_join(tid[iloop], NULL);
     }
 

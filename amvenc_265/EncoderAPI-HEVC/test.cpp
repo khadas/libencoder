@@ -226,6 +226,10 @@ int main(int argc, const char *argv[]){
         if (i >= CFG_ENCODE_NUM_MAX)
             break;
         pthread_create(&tid[i], NULL, encode_thread, &cfg_encode[i]);
+    }
+    for (i = 0; i < cfg_encode[0].seqNum; i ++) {
+        if (i >= CFG_ENCODE_NUM_MAX)
+            break;
         pthread_join(tid[i], NULL);
     }
 
