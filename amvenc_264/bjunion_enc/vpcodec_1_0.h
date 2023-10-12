@@ -217,7 +217,6 @@ vl_enc_result_e vl_video_encoder_encode_frame(vl_codec_handle_t codec_handle, vl
 
 vl_enc_result_e vl_video_encoder_getavgqp(vl_codec_handle_t handle, float *avg_qp);
 
-//double round(double r);
 
 
 /**

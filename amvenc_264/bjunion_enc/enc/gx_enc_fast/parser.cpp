@@ -302,6 +302,7 @@ int Parser_DumpInfo(gx_fast_enc_drv_t* p) {
     unsigned char* cur_mb = p->dump_buf.addr;
     unsigned char* next_mb = cur_mb;
     uint8_t index = 0;
+    uint32_t sum_qp = 0;
 
     if (p->cbr_hw)
         memset(p->block_sad_size, 0,sizeof(p->block_sad_size));
@@ -657,6 +658,7 @@ int Parser_DumpInfo(gx_fast_enc_drv_t* p) {
                 free(str_line);
             }
 #endif
+        sum_qp = sum_qp + info->quant;
         }
 #ifdef SAD_INTERVAL_STATISTIC
         if (value == frame_count) {
@@ -664,6 +666,7 @@ int Parser_DumpInfo(gx_fast_enc_drv_t* p) {
         }
 #endif
     }
+    p->avg_qp = (float)sum_qp/(p->src.mb_width * p->src.mb_height);
     if (p->qp_stic.f_sad_count == 0)
         p->qp_stic.f_sad_count = 1;
     if (!p->cbr_hw)

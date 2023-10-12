@@ -172,7 +172,7 @@ typedef struct {
     gx_fast_buff_t cbr_buff;
 
     mb_t* mb_info;
-
+    float avg_qp;
     bool scale_enable;
     qp_statistic_info_t qp_stic;
     bool logtime;
@@ -205,6 +205,7 @@ enum qp_table_type {curve, line};
 extern void* GxInitFastEncode(int fd, amvenc_initpara_t* init_para);
 extern AMVEnc_Status GxFastEncodeInitFrame(void *dev, ulong *yuv, AMVEncBufferType type, AMVEncFrameFmt fmt, bool IDRframe);
 extern AMVEnc_Status GxFastEncodeSPS_PPS(void *dev, unsigned char* outptr, int* datalen);
+extern AMVEnc_Status GxFastGetAvgQp(void* dev, float* avgQp);
 extern AMVEnc_Status GxFastEncodeSlice(void *dev, unsigned char* outptr, int* datalen);
 extern AMVEnc_Status GxFastEncodeCommit(void* dev, bool IDR);
 extern void GxUnInitFastEncode(void *dev);

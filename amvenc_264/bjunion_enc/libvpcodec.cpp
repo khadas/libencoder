@@ -624,6 +624,19 @@ int vl_video_encode_header(vl_codec_handle_t codec_handle, vl_vui_params_t vui, 
     return handle->mSPSPPSDataSize;
 }
 
+vl_enc_result_e vl_video_encoder_getavgqp(vl_codec_handle_t codec_handle, float *avg_qp) {
+    AMVEnc_Status ret;
+    AMVEncHandle *handle = (AMVEncHandle *)codec_handle;
+    float avgqp;
+
+    ret = AML_HWGetAvgQp(handle, &avgqp);
+    if (ret == AMVENC_SUCCESS) {
+        *avg_qp = avgqp;
+    } else {
+        VLOG(ERR,"get avgqp fail! ret = %d at line %d", ret, __LINE__);
+    }
+    return ENC_SUCCESS;
+}
 
 int vl_video_encoder_encode(vl_codec_handle_t codec_handle, vl_frame_type_t frame_type, unsigned char *in, int in_size, unsigned char *out, int format)
 {
