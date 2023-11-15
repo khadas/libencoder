@@ -57,7 +57,7 @@ int AmlVencParamWave5::GetMaxOutputBufferSize() {
 }
 
 bool AmlVencParamWave5::GetSVCLimit(stSVCInfo &SvcInfo) {
-    SvcInfo.enable = false;// true;
+    SvcInfo.enable = true;
     SvcInfo.SupportLayerCntMin = 1;
     SvcInfo.SupportLayerCntMax = 3;
     return true;
