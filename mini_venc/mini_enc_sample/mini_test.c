@@ -32,8 +32,8 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <stdarg.h>
-#include "mini_vcmd_parameter.h"
-
+#include "mini_vc9000e_parameter.h"
+#include "mini_enc_regs.h"
 #include "mini_memory_pool.h"
 
 typedef struct{
@@ -172,7 +172,7 @@ extern unsigned int vce_vcmd0[];
 extern unsigned int vce_vcmd1[];
 
 int fd;
-unsigned long mini_reg_base;
+unsigned long vc9000e_reg_base;
 
 
 static hantro_buffer_t common_buffer;
@@ -364,111 +364,107 @@ void vce_frame_start(venc_context_t *context,int frm_num,venc_ringbuffer_t * min
 		printf("vce_frame_start >> frm_num %d,Luma_addr = 0x%x\n",frm_num,Luma_addr);
 		#endif
 
-		regMirror[20/4] = (regMirror[20/4] & ~(0xffc00000)) | ((context->width>>3 << 0x16) & 0xffc00000);
-		regMirror[20/4] = (regMirror[20/4] & ~(0x003ff800)) | ((context->height << 0xb) & 0x3ff800);
-		regMirror[20/4] = (regMirror[20/4] & ~(0x00000006)) | ((0x1 << 0x1) & 0x6);
-		regMirror[152/4] = (regMirror[152/4] & ~(0x000fffc0)) | ((context->width << 0x6) & 0xfffc0);
-		regMirror[948/4] = (regMirror[948/4] & ~(0xfffff000)) | ((context->width<<2 << 0xc) & 0xfffff000);
-		regMirror[1044/4] = (regMirror[1044/4] & ~(0xfff80000)) | ((context->width>>3 << 0x13) & 0xfff80000);
-		regMirror[848/4] = (regMirror[848/4] & ~(0xfffff000)) | ((context->width<<2 << 0xc) & 0xfffff000);
-		regMirror[852/4] = (regMirror[852/4] & ~(0xffffc000)) | ((context->width << 0xe) & 0xffffc000);
-		regMirror[420/4] = (regMirror[420/4] & ~(0xffffffff)) | ((0x927a0 << 0x0) & 0xffffffff);
-		regMirror[48/4] = (regMirror[48/4] & ~(0xffffffff)) | ((Luma_addr << 0x0) & 0xffffffff);
-		regMirror[52/4] = (regMirror[52/4] & ~(0xffffffff)) | ((Cb_addr << 0x0) & 0xffffffff);
-		regMirror[56/4] = (regMirror[56/4] & ~(0xffffffff)) | ((Cr_addr << 0x0) & 0xffffffff);
-		regMirror[840/4] = (regMirror[840/4] & ~(0xfffff000)) | ((context->stride_width << 0xc) & 0xfffff000);
-		regMirror[844/4] = (regMirror[844/4] & ~(0xfffff000)) | ((context->stride_width << 0xc) & 0xfffff000);
-		regMirror[32/4] = (regMirror[32/4] & ~(0xffffffff)) | ((bitstream_buffer[0].phys_addr << 0x0) & 0xffffffff);
-		regMirror[152/4] = (regMirror[152/4] & ~(0xf0000000)) | ((0x1 << 0x1c) & 0xf0000000);
-		regMirror[240/4] = (regMirror[240/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->compressTbl_phys_luma_addr0 << 0x0) & 0xffffffff);
-		regMirror[248/4] = (regMirror[248/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->compressTbl_phys_chroma_addr0  << 0x0) & 0xffffffff);
-		regMirror[256/4] = (regMirror[256/4] & ~(0xffffffff)) | ((0x0 << 0x0) & 0xffffffff);
-		regMirror[264/4] = (regMirror[264/4] & ~(0xffffffff)) | ((0x0 << 0x0) & 0xffffffff);
-		regMirror[184/4] = (regMirror[184/4] & ~(0xffffffff)) | ((compress_coeff_SCAN[0].phys_addr << 0x0) & 0xffffffff);
-		regMirror[332/4] = (regMirror[332/4] & ~(0xffffffff)) | ((recon_buffer[0].phys_addr << 0x0) & 0xffffffff);
-		regMirror[44/4] = (regMirror[44/4] & ~(0xffffffff)) | ((0x0 << 0x0) & 0xffffffff);
-		regMirror[60/4] = (regMirror[60/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->refRingBuf_luma_wr_offset << 0x0) & 0xffffffff);
-		regMirror[64/4] = (regMirror[64/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->refRingBuf_cb_wr_offset << 0x0) & 0xffffffff);
-		regMirror[72/4] = (regMirror[72/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->refRingBuf_luma_rd_offset << 0x0) & 0xffffffff);
-		regMirror[76/4] = (regMirror[76/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->refRingBuf_cb_rd_offset << 0x0) & 0xffffffff);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_PIC_WIDTH,context->width>>3);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_PIC_HEIGHT,context->height>>3);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_FRAME_CODING_TYPE,1);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_ROWLENGTH,context->width);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_REF_CH_STRIDE,context->width<<2);// 0:420  1:n12
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_TILEWIDTHIN8,context->width>>3);// 0:420  1:n12
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_REF_LU_STRIDE,context->width<<2);// 0:420  1:n12
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_REF_DS_LU_STRIDE,context->width);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_TARGETPICSIZE,0x927a0);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_INPUT_Y_BASE,Luma_addr);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_INPUT_CB_BASE,Cb_addr);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_INPUT_CR_BASE,Cr_addr);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_INPUT_LU_STRIDE,context->stride_width);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_INPUT_CH_STRIDE,context->stride_width);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_OUTPUT_STRM_BASE,bitstream_buffer[0].phys_addr);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_INPUT_FORMAT,1);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_RECON_LUMA_COMPRESS_TABLE_BASE, mini_sys_ringbuffer->compressTbl_phys_luma_addr0);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_RECON_CHROMA_COMPRESS_TABLE_BASE,mini_sys_ringbuffer->compressTbl_phys_chroma_addr0 );
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_L0_REF0_LUMA_COMPRESS_TABLE_BASE, 0x0);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_L0_REF0_CHROMA_COMPRESS_TABLE_BASE, 0x0);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_COMPRESSEDCOEFF_BASE,compress_coeff_SCAN[0].phys_addr);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_REFPIC_RECON_L1_Y0,recon_buffer[0].phys_addr);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_POC,frm_num);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_RECON_Y_BASE,mini_sys_ringbuffer->refRingBuf_luma_wr_offset);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_RECON_CHROMA_BASE,mini_sys_ringbuffer->refRingBuf_cb_wr_offset);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_REFPIC_RECON_L0_Y0,mini_sys_ringbuffer->refRingBuf_luma_rd_offset);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_REFPIC_RECON_L0_CHROMA0,mini_sys_ringbuffer->refRingBuf_cb_rd_offset);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_RECON_Y_BASE_MSB,mini_sys_ringbuffer->refRingBuf_luma_size);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_RECON_CHROMA_BASE_MSB,mini_sys_ringbuffer->refRingBuf_chroma_size);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_RECON_LUMA_4N_BASE,mini_sys_ringbuffer->refRingBuf_4n_wr_offset);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_RECON_LUMA_4N_BASE_MSB,mini_sys_ringbuffer->refRingBuf_4n_size);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_REFPIC_RECON_L0_4N0_BASE,mini_sys_ringbuffer->refRingBuf_4n_rd_offset);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_NEXT_CMD_LENGTH, 0xcc000106);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_NEXT_CMD_ADDR_L, vcmd_buffer[1].phys_addr);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_NEXT_CMD_BUF_ID, 0x2);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_CHROMA_SWAP, 0x1);
 
-		regMirror[224/4] = (regMirror[224/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->refRingBuf_luma_size << 0x0) & 0xffffffff);
-		regMirror[228/4] = (regMirror[228/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->refRingBuf_chroma_size << 0x0) & 0xffffffff);
-		regMirror[288/4] = (regMirror[288/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->refRingBuf_4n_wr_offset << 0x0) & 0xffffffff);
-		regMirror[292/4] = (regMirror[292/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->refRingBuf_4n_size << 0x0) & 0xffffffff);
-		regMirror[296/4] = (regMirror[296/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->refRingBuf_4n_rd_offset << 0x0) & 0xffffffff);
-		regMirror[2076/4] = (regMirror[2076/4] & ~(0xffffffff)) | ((0xcc000106 << 0x0) & 0xffffffff);
-		regMirror[2080/4] = (regMirror[2080/4] & ~(0xffffffff)) | (( vcmd_buffer[1].phys_addr << 0x0) & 0xffffffff);
-		regMirror[2088/4] = (regMirror[2088/4] & ~(0xffffffff)) | ((0x2 << 0x0) & 0xffffffff);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 0x1fe, HWIF_ENC_PIC_WIDTH,(context->width >> 3)&0x3ff);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 0x1fe, HWIF_ENC_PIC_HEIGHT,context->height >> 3);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 0x1fe, HWIF_ENC_FRAME_CODING_TYPE,1);
 
-		//swap
-		regMirror[180/4] = (regMirror[180/4] & ~(0x08000000)) | ((0x1 << 0x1b) & 0x08000000);
-
-
-		//2048
-		regMirror[28/4] = (regMirror[28/4] & ~(0x00003f00)) | ((0x21 << 0x8) & 0x3f00);
-		regMirror[28/4] = (regMirror[28/4] & ~(0xfc000000)) | ((0x23 << 0x1a) & 0xfc000000);
-
-		Wr(MINI_VCMD_SWREG016, 0x00000021);  //[0]vcmd_start_trigger
+		Wr(VC9000E_VCMD_SWREG016, 0x00000021);  //[0]vcmd_start_trigger
     }
     else
 	{
 		regMirror = (unsigned int *)vcmd_buffer[1].virt_addr + 1;
-
 		Cb_addr = Luma_addr + context->stride_width * context->height;
 		Cr_addr =Luma_addr + context->stride_width * context->height + context->stride_width * context->height / 2;
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_PIC_WIDTH,context->width>>3);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_PIC_HEIGHT,context->height>>3);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_FRAME_CODING_TYPE,0);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_ROWLENGTH,context->width);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_REF_LU_STRIDE,context->width<<2);	// 0:420  1:n12
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_REF_DS_LU_STRIDE,context->width );
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_REF_CH_STRIDE,context->width<<2);	// 0:420  1:n12
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_TILEWIDTHIN8,context->width>>3);	// 0:420  1:n12
 
-		regMirror[28/4] = (regMirror[28/4] & ~(0x00003f00)) | ((0x21 << 0x8) & 0x3f00);
-		regMirror[28/4] = (regMirror[28/4] & ~(0xfc000000)) | ((0x23 << 0x1a) & 0xfc000000);
-		regMirror[20/4] = (regMirror[20/4] & ~(0xffc00000)) | ((context->width>>3 << 0x16) & 0xffc00000);
-		regMirror[20/4] = (regMirror[20/4] & ~(0x003ff800)) | ((context->height>>3 << 0xb) & 0x3ff800);
-		regMirror[20/4] = (regMirror[20/4] & ~(0x00000006)) | ((0x0 << 0x1) & 0x6);
-		regMirror[152/4] = (regMirror[152/4] & ~(0x000fffc0)) | ((context->width << 0x6) & 0xfffc0);
-		regMirror[848/4] = (regMirror[848/4] & ~(0xfffff000)) | ((context->width<<2 << 0xc) & 0xfffff000);
-		regMirror[852/4] = (regMirror[852/4] & ~(0xffffc000)) | ((context->width << 0xe) & 0xffffc000);
-		regMirror[948/4] = (regMirror[948/4] & ~(0xfffff000)) | ((context->width<<2 << 0xc) & 0xfffff000);
-		regMirror[1044/4] = (regMirror[1044/4] & ~(0xfff80000)) | ((context->width>>3 << 0x13) & 0xfff80000);
-		regMirror[44/4] = (regMirror[44/4] & ~(0xffffffff)) | ((frm_num << 0x0) & 0xffffffff);
-		regMirror[48/4] = (regMirror[48/4] & ~(0xffffffff)) | ((Luma_addr << 0x0) & 0xffffffff);
-		regMirror[52/4] = (regMirror[52/4] & ~(0xffffffff)) | ((Cb_addr << 0x0) & 0xffffffff);
-		regMirror[56/4] = (regMirror[56/4] & ~(0xffffffff)) | ((Cr_addr << 0x0) & 0xffffffff);
-		regMirror[840/4] = (regMirror[840/4] & ~(0xfffff000)) | ((context->stride_width << 0xc) & 0xfffff000);
-		regMirror[844/4] = (regMirror[844/4] & ~(0xfffff000)) | ((context->stride_width << 0xc) & 0xfffff000);
-		regMirror[32/4] = (regMirror[32/4] & ~(0xffffffff)) | ((bitstream_buffer[0].phys_addr << 0x0) & 0xffffffff);
-		regMirror[152/4] = (regMirror[152/4] & ~(0xf0000000)) | ((0x1 << 0x1c) & 0xf0000000);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_POC,frm_num);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_INPUT_Y_BASE,Luma_addr);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_INPUT_CB_BASE,Cb_addr);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_INPUT_CR_BASE,Cr_addr);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_INPUT_LU_STRIDE,context->stride_width);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_INPUT_CH_STRIDE,context->stride_width);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_OUTPUT_STRM_BASE,bitstream_buffer[0].phys_addr);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_INPUT_FORMAT,1);
+
 		if (frm_num%2)
 		{
-			regMirror[240/4] = (regMirror[240/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->compressTbl_phys_luma_addr1 << 0x0) & 0xffffffff);
-			regMirror[248/4] = (regMirror[248/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->compressTbl_phys_chroma_addr1 << 0x0) & 0xffffffff);
-			regMirror[256/4] = (regMirror[256/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->compressTbl_phys_luma_addr0 << 0x0) & 0xffffffff);
-			regMirror[264/4] = (regMirror[264/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->compressTbl_phys_chroma_addr0 << 0x0) & 0xffffffff);
+			EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_RECON_LUMA_COMPRESS_TABLE_BASE,mini_sys_ringbuffer->compressTbl_phys_luma_addr1);
+			EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_RECON_CHROMA_COMPRESS_TABLE_BASE,mini_sys_ringbuffer->compressTbl_phys_chroma_addr1);
+			EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_L0_REF0_LUMA_COMPRESS_TABLE_BASE,mini_sys_ringbuffer->compressTbl_phys_luma_addr0);
+			EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_L0_REF0_CHROMA_COMPRESS_TABLE_BASE,mini_sys_ringbuffer->compressTbl_phys_chroma_addr0 );
 		}
 		else
 		{
-			regMirror[240/4] = (regMirror[240/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->compressTbl_phys_luma_addr0 << 0x0) & 0xffffffff);
-			regMirror[248/4] = (regMirror[248/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->compressTbl_phys_chroma_addr0 << 0x0) & 0xffffffff);
-			regMirror[256/4] = (regMirror[256/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->compressTbl_phys_luma_addr1 << 0x0) & 0xffffffff);
-			regMirror[264/4] = (regMirror[264/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->compressTbl_phys_chroma_addr1 << 0x0) & 0xffffffff);
+			EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_RECON_LUMA_COMPRESS_TABLE_BASE, mini_sys_ringbuffer->compressTbl_phys_luma_addr0);
+			EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_RECON_CHROMA_COMPRESS_TABLE_BASE,mini_sys_ringbuffer->compressTbl_phys_chroma_addr0 );
+			EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_L0_REF0_LUMA_COMPRESS_TABLE_BASE, mini_sys_ringbuffer->compressTbl_phys_luma_addr1);
+			EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_L0_REF0_CHROMA_COMPRESS_TABLE_BASE,mini_sys_ringbuffer->compressTbl_phys_chroma_addr1 );
 		}
 
-		//swap
-		regMirror[180/4] = (regMirror[180/4] & ~(0x08000000)) | ((0x1 << 0x1b) & 0x08000000);
-		regMirror[184/4] = (regMirror[184/4] & ~(0xffffffff)) | ((compress_coeff_SCAN[0].phys_addr << 0x0) & 0xffffffff);
-		regMirror[332/4] = (regMirror[332/4] & ~(0xffffffff)) | ((recon_buffer[0].phys_addr << 0x0) & 0xffffffff);
-		regMirror[60/4] = (regMirror[60/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->refRingBuf_luma_wr_offset << 0x0) & 0xffffffff);
-		regMirror[64/4] = (regMirror[64/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->refRingBuf_cb_wr_offset << 0x0) & 0xffffffff);
-		regMirror[72/4] = (regMirror[72/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->refRingBuf_luma_rd_offset << 0x0) & 0xffffffff);
-		regMirror[76/4] = (regMirror[76/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->refRingBuf_cb_rd_offset << 0x0) & 0xffffffff);
-		regMirror[224/4] = (regMirror[224/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->refRingBuf_luma_size << 0x0) & 0xffffffff);
-		regMirror[228/4] = (regMirror[228/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->refRingBuf_chroma_size << 0x0) & 0xffffffff);
-		regMirror[288/4] = (regMirror[288/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->refRingBuf_4n_wr_offset << 0x0) & 0xffffffff);
-		regMirror[292/4] = (regMirror[292/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->refRingBuf_4n_size << 0x0) & 0xffffffff);
-		regMirror[296/4] = (regMirror[296/4] & ~(0xffffffff)) | ((mini_sys_ringbuffer->refRingBuf_4n_rd_offset << 0x0) & 0xffffffff);
-		regMirror[2076/4] = (regMirror[2076/4] & ~(0xffffffff)) | ((0xcc000106 << 0x0) & 0xffffffff);
-		regMirror[2088/4] = (regMirror[2088/4] & ~(0xffffffff)) | ((frm_num+2 << 0x0) & 0xffffffff);
-		regMirror[2080/4] = (regMirror[2080/4] & ~(0xffffffff)) | ((vcmd_buffer[1].phys_addr << 0x0) & 0xffffffff);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_COMPRESSEDCOEFF_BASE,compress_coeff_SCAN[0].phys_addr);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_REFPIC_RECON_L1_Y0,recon_buffer[0].phys_addr);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_RECON_Y_BASE,mini_sys_ringbuffer->refRingBuf_luma_wr_offset);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_RECON_CHROMA_BASE,mini_sys_ringbuffer->refRingBuf_cb_wr_offset);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_REFPIC_RECON_L0_Y0,mini_sys_ringbuffer->refRingBuf_luma_rd_offset);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_REFPIC_RECON_L0_CHROMA0,mini_sys_ringbuffer->refRingBuf_cb_rd_offset);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_RECON_Y_BASE_MSB,mini_sys_ringbuffer->refRingBuf_luma_size);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_RECON_CHROMA_BASE_MSB,mini_sys_ringbuffer->refRingBuf_chroma_size);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_RECON_LUMA_4N_BASE,mini_sys_ringbuffer->refRingBuf_4n_wr_offset);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_RECON_LUMA_4N_BASE_MSB,mini_sys_ringbuffer->refRingBuf_4n_size);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_REFPIC_RECON_L0_4N0_BASE,mini_sys_ringbuffer->refRingBuf_4n_rd_offset);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_CHROMA_SWAP, 0x1);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_NEXT_CMD_LENGTH, 0xcc000106);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_NEXT_CMD_BUF_ID, frm_num+2);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_NEXT_CMD_ADDR_L, vcmd_buffer[1].phys_addr);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 0x1fe, HWIF_ENC_PIC_WIDTH,(context->width >> 3)&0x3ff);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 0x1fe, HWIF_ENC_PIC_HEIGHT,context->height >> 3);
+		EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 0x1fe, HWIF_ENC_FRAME_CODING_TYPE,0);
 
-        Wr(MINI_VCMD_OFFSET+0x00000060, frm_num+1);
+		Wr(VC9000E_VCMD_OFFSET+0x00000060, frm_num+1);
     }
 
 
@@ -579,7 +575,7 @@ void vce_stream_dump(unsigned int frm_num)
     FILE *file_bitstream;
     char name[80];
 
-    unsigned int bitstream_size = Rd(MINI_CORE_SWREG009);
+    unsigned int bitstream_size = Rd(VC9000E_CORE_SWREG009);
 
 	//bitstream_size=	BIT_STREAM_BUF_SIZE;
     sprintf(name, "/data/bin/frm%d.bin", frm_num);
@@ -602,7 +598,7 @@ int mini_es_dump_init(void)
 {
 	int ret = 0;
 	char name[80];
-	sprintf(name, "/data/bin/es.265");
+	sprintf(name, "/data/es.265");
 	es_bitstream = fopen(name, "wb");
 	if (es_bitstream == NULL)
 	{
@@ -628,7 +624,7 @@ void mini_es_dump(unsigned int frm_num)
 	FILE *file_bitstream;
 	char name[80];
 
-	unsigned int bitstream_size = Rd(MINI_CORE_SWREG009);
+	unsigned int bitstream_size = Rd(VC9000E_CORE_SWREG009);
 	fwrite((void*)bitstream_buffer[frm_num].virt_addr, bitstream_size, 1, es_bitstream);
 	#if LOG_PRINTF
 	printf("bitstream_buffer[frm_num].virt_addr = 0x%x\n", (void*)bitstream_buffer[frm_num].virt_addr);
@@ -716,10 +712,13 @@ int mini_system_encoder_init(venc_context_t *context)
 	vce_vcmd[0] = (void*)vce_vcmd0;
 	vce_vcmd[1] = (void*)vce_vcmd1;
 
-	header = (void*)header_2048_1536;
+	if (context->width == 2560)
+		header = (void*)header_2560p;
+	else if (context->width == 1920)
+		header = (void*)header_1080p;
 
-	head_size = 0x5a;
-	//head_size = 0x59;
+//	head_size = 0x5a;
+	head_size = 0x59;
 #if LOG_PRINTF
 	printf("head_size = 0x%x\n",head_size);
 #endif
@@ -772,7 +771,7 @@ int mini_system_encoder_init(venc_context_t *context)
 	//hw register phy address
 	hw_regs.phys_addr = VCMD_REG_BASE;
 	hw_regs.size = HW_REG_SIZE;
-	mini_reg_base = hw_regs.phys_addr;
+	vc9000e_reg_base = hw_regs.phys_addr;
 
 #ifndef RTOS_MINI_SYSTEM
 
@@ -785,7 +784,7 @@ int mini_system_encoder_init(venc_context_t *context)
 
 
 	//remap register base
-	mini_reg_base = hw_regs.virt_addr;
+	vc9000e_reg_base = hw_regs.virt_addr;
 #endif
 
 
@@ -1065,20 +1064,33 @@ int mini_system_encoder_open(venc_context_t *context,int cmd_index)
 
 	memcpy((void*)vcmd_buffer[1].virt_addr, vce_vcmd[1], VCMD_MAX_SIZE);
 #endif
-	Wr(MINI_VCMD_SWREG017, 0xffffffff);//Interrupt status/clr
-	Wr(MINI_VCMD_SWREG018, 0x0000003f);
-	Wr(MINI_VCMD_SWREG023, 0x00100000);//[31:28] axi_endian; [23:16] axi_burst_len; [15:8] axi_id_rd; [7:0] axi_id_wr
-	Wr(MINI_VCMD_SWREG025, 0x00000004);//[15:0] abn_intr_gate; [31:16] norm_intr_gate
-	Wr(MINI_VCMD_SWREG024, 0x00000001);//sw_rdy_cmdbuf_coun
-	Wr(MINI_VCMD_SWREG020, vcmd_buffer[0].phys_addr );// cmdbuf_start_addr_lsb
+	Wr(VC9000E_VCMD_SWREG017, 0xffffffff);//Interrupt status/clr
+	Wr(VC9000E_VCMD_SWREG018, 0x0000003f);
+	Wr(VC9000E_VCMD_SWREG023, 0x00100000);//[31:28] axi_endian; [23:16] axi_burst_len; [15:8] axi_id_rd; [7:0] axi_id_wr
+	Wr(VC9000E_VCMD_SWREG025, 0x00000004);//[15:0] abn_intr_gate; [31:16] norm_intr_gate
+	Wr(VC9000E_VCMD_SWREG024, 0x00000001);//sw_rdy_cmdbuf_coun
+	Wr(VC9000E_VCMD_SWREG020, vcmd_buffer[0].phys_addr );// cmdbuf_start_addr_lsb
 
-	Wr(MINI_VCMD_SWREG021, 0x00000000);// cmdbuf_start_addr_msb
-
-	Wr(MINI_VCMD_SWREG022, 0x106);//cmdbuf_size_in_64bit
-	// Wr(MINI_VCMD_SWREG022, 0x2);//cmdbuf_size_in_64bit
+	Wr(VC9000E_VCMD_SWREG021, 0x00000000);// cmdbuf_start_addr_msb
+	Wr(VC9000E_VCMD_SWREG022, 0x106);//cmdbuf_size_in_64bit
+	// Wr(VC9000E_VCMD_SWREG022, 0x2);//cmdbuf_size_in_64bit
 	return ret;
 }
 
+
+
+int write_core2048_P(unsigned int *regs)
+{
+	EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_PIC_QP,33);
+	EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[1].virt_addr + 1, HWIF_ENC_PIC_INIT_QP,35);
+}
+
+
+int write_core2048_I(unsigned int *regs)
+{
+	EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_PIC_QP,33);
+	EncAsicSetRegisterValue((unsigned int *)vcmd_buffer[0].virt_addr + 1, HWIF_ENC_PIC_INIT_QP,35);
+}
 
 
 
@@ -1102,11 +1114,11 @@ int main(int argc, char *argv[])
 	*(volatile unsigned int *)(WRAP_CLOCK_CTL)=0x7000500;
 #endif
 	raw_data_number = 1;
-	encoded_frame_num = 3;
+	encoded_frame_num = 10;
 	memset(&g_context,0,sizeof(venc_context_t));
-    g_context.width =2048;
-    g_context.height = 1536;
-	g_context.stride_width = 2048;
+	g_context.width = 2560;
+	g_context.height = 1440;
+	g_context.stride_width = g_context.width;//2560;
     g_context.encType = 1;
     g_context.fps = 15;
 	g_context.gop = 15;
@@ -1115,7 +1127,8 @@ int main(int argc, char *argv[])
 #ifndef	RTOS_MINI_SYSTEM
 	mini_es_dump_init();
 
-	fp = fopen("/data/ParkScene_2048_nv21_3.yuv","r+");
+	fp = fopen("/data/2560p_10f.yuv","r+");
+
 	if (fp == NULL) {
 		return -1;
 	}
@@ -1158,6 +1171,7 @@ int main(int argc, char *argv[])
        }
 
 		mini_es_dump(0);
+		printf("mini_system_encoder_init Done, encoded_frame_num %d\n", j);
 
 	}
 #ifndef	RTOS_MINI_SYSTEM

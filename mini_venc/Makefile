@@ -17,17 +17,18 @@ ARCH=arm
 
 HEX2BIN = hex2bin.c
 
-
-MINI_ENC += mini_test.c
-
+# MINI_ENC += mini_enc_regs.c
+# MINI_ENC += mini_test.c
+MINI_ENC += mini_test_reg.c
 
 MINI_ENC += mini_memory_pool.c
 
 
 DATA += vce_vcmd0.bin
 DATA += vce_vcmd1.bin
-DATA += header_2048_1536.bin
-
+# DATA += header_2048_1536.bin
+DATA += header_2560p.bin
+DATA += header_1080p.bin
 
 #source search path
 vpath %.c
