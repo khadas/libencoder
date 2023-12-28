@@ -68,6 +68,113 @@ int AmlVencInstWave5::AVCProfileConvert(C2Config::profile_t profile) {
     return retProfile;
 }
 
+int AmlVencInstWave5::AVCLevelConvert(C2Config::level_t Level) {
+//only for 264
+    int retLevel = 0;
+    switch (Level) {
+        case LEVEL_AVC_1B:
+            retLevel = MEDIA_AVC_LEVEL1_B;
+            break;
+        case LEVEL_AVC_1_1:
+            retLevel = MEDIA_AVC_LEVEL1_1;
+            break;
+        case LEVEL_AVC_1_2:
+            retLevel = MEDIA_AVC_LEVEL1_2;
+            break;
+        case LEVEL_AVC_1_3:
+            retLevel = MEDIA_AVC_LEVEL1_3;
+            break;
+        case LEVEL_AVC_2:
+            retLevel = MEDIA_AVC_LEVEL2;
+            break;
+        case LEVEL_AVC_2_1:
+            retLevel = MEDIA_AVC_LEVEL2_1;
+            break;
+        case LEVEL_AVC_2_2:
+            retLevel = MEDIA_AVC_LEVEL2_2;
+            break;
+        case LEVEL_AVC_3:
+            retLevel = MEDIA_AVC_LEVEL3;
+            break;
+        case LEVEL_AVC_3_1:
+            retLevel = MEDIA_AVC_LEVEL3_1;
+            break;
+        case LEVEL_AVC_3_2:
+            retLevel = MEDIA_AVC_LEVEL3_2;
+            break;
+        case LEVEL_AVC_4:
+            retLevel = MEDIA_AVC_LEVEL4;
+            break;
+        case LEVEL_AVC_4_1:
+            retLevel = MEDIA_AVC_LEVEL4_1;
+            break;
+        case LEVEL_AVC_4_2:
+            retLevel = MEDIA_AVC_LEVEL4_2;
+            break;
+        case LEVEL_AVC_5:
+            retLevel = MEDIA_AVC_LEVEL5;
+            break;
+        case LEVEL_AVC_5_1:
+            retLevel = MEDIA_AVC_LEVEL5_1;
+            break;
+        default:
+            retLevel = MEDIA_AVC_LEVEL3;
+            break;
+    }
+    return retLevel;
+}
+
+int AmlVencInstWave5::HEVCLevelConvert(C2Config::level_t Level) {
+//only for 265
+    ALOGE("HEVCLevelConvert Level:%x",Level);
+    int retLevel = 0;
+    switch (Level) {
+        case LEVEL_HEVC_MAIN_1:
+            retLevel = MEDIA_HEVC_LEVEL1;
+            break;
+        case LEVEL_HEVC_MAIN_2:
+            retLevel = MEDIA_HEVC_LEVEL2;
+            break;
+        case LEVEL_HEVC_MAIN_2_1:
+            retLevel = MEDIA_HEVC_LEVEL2_1;
+            break;
+        case LEVEL_HEVC_MAIN_3:
+            retLevel = MEDIA_HEVC_LEVEL3;
+            break;
+        case LEVEL_HEVC_MAIN_3_1:
+            retLevel = MEDIA_HEVC_LEVEL3_1;
+            break;
+        case LEVEL_HEVC_MAIN_4:
+            retLevel = MEDIA_HEVC_LEVEL4;
+            break;
+        case LEVEL_HEVC_MAIN_4_1:
+            retLevel = MEDIA_HEVC_LEVEL4_1;
+            break;
+        case LEVEL_HEVC_MAIN_5:
+            retLevel = MEDIA_HEVC_LEVEL5;
+            break;
+        case LEVEL_HEVC_MAIN_5_1:
+            retLevel = MEDIA_HEVC_LEVEL5_1;
+            break;
+        case LEVEL_HEVC_MAIN_5_2:
+            retLevel = MEDIA_HEVC_LEVEL5_2;
+            break;
+        case LEVEL_HEVC_MAIN_6:
+            retLevel = MEDIA_HEVC_LEVEL6;
+            break;
+        case LEVEL_HEVC_MAIN_6_1:
+            retLevel = MEDIA_HEVC_LEVEL6_1;
+            break;
+        case LEVEL_HEVC_MAIN_6_2:
+            retLevel = MEDIA_HEVC_LEVEL6_2;
+            break;
+        default:
+            retLevel = MEDIA_HEVC_LEVEL3;
+            break;
+    }
+    return retLevel;
+}
+
 
 bool AmlVencInstWave5::init() {
     stVencParam VencParam;
@@ -129,9 +236,14 @@ void AmlVencInstWave5::ExtraInit(amvenc_info_t &VencInfo,amvenc_qp_param_t &QpPa
         ALOGE("detect color format change to %d",mActualFormat);
     }
 
-    if (H264 == mVencParamInst->GetCodecType())
+    if (H264 == mVencParamInst->GetCodecType()) {
         VencInfo.profile = AVCProfileConvert(VencParam.ProfileLevel.profile);
-
+        VencInfo.level = AVCLevelConvert(VencParam.ProfileLevel.level);
+    }
+    else if (H265 == mVencParamInst->GetCodecType()) {
+        VencInfo.level = HEVCLevelConvert(VencParam.ProfileLevel.level);
+    }
+    ALOGE("ExtraInit profile:%d,level:%d",VencInfo.profile,VencInfo.level);
     VencInfo.bitstream_buf_sz_kb = mVencParamInst->GetMaxOutputBufferSize() / 1024;
 
     VencInfo.enc_feature_opts |= ENC_ENABLE_PARA_UPDATE; //enable dynamic settings

@@ -140,6 +140,7 @@ typedef struct vl_encode_info {
   int intra_refresh_arg; /* number of MB(CTU) rows, columns, MB(CTU)s */
   int profile; /* encoding profile: 0 auto (H.264 high, H.265 main profile) */
                /* H.264 1: baseline 2: Main, 3 High profile*/
+  int level;
   /*frame rotation angle before encoding, counter clock-wise
 	0: no rotation
 	90: rotate 90 degree

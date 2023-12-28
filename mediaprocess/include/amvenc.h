@@ -97,6 +97,7 @@ typedef struct amvenc_info {
     90: rotate 90 degree
     180: rotate 180 degree
     270: rotate 270 degree*/
+    int level;
     uint32_t frame_rotation;
     /*frame mirroring before encoding
     0: no mirroring

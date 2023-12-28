@@ -71,7 +71,7 @@ bool AmlVencParamWave5::GetDefaultProfileLevel(C2Config::profile_t &profile,C2Co
     }
     else if(H265 == mCodecType) {
         profile = PROFILE_HEVC_MAIN;
-        level = LEVEL_HEVC_HIGH_5_1;
+        level = LEVEL_HEVC_MAIN_5_1;
     }
     else {
         return false;

@@ -176,6 +176,7 @@ amvenc_handle_t amvenc_multi_init(amvenc_codec_id_t vcodec_id,
     encode_info.intra_refresh_arg = vcodec_info.intra_refresh_arg;
 
     encode_info.profile = vcodec_info.profile;
+    encode_info.level = vcodec_info.level;
 
     encode_info.frame_rotation = vcodec_info.frame_rotation;
     encode_info.frame_mirroring = vcodec_info.frame_mirroring;

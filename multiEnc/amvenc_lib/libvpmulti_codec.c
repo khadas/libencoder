@@ -71,6 +71,43 @@ static struct timeval end_test;
 #define LOG_LINE() ALOGD("[%s:%d]\n", __FUNCTION__, __LINE__)
 #endif
 
+unsigned char avc_supportlevel_list[] = {
+                AVC_LEVEL1_B,
+                AVC_LEVEL1,
+                AVC_LEVEL1_1,
+                AVC_LEVEL1_2,
+                AVC_LEVEL1_3,
+                AVC_LEVEL2,
+                AVC_LEVEL2_1,
+                AVC_LEVEL2_2,
+                AVC_LEVEL3,
+                AVC_LEVEL3_1,
+                AVC_LEVEL3_2,
+                AVC_LEVEL4,
+                AVC_LEVEL4_1,
+                AVC_LEVEL4_2,
+                AVC_LEVEL5,
+                AVC_LEVEL5_1,
+};
+
+unsigned char hevc_supportlevel_list[] = {
+                HEVC_LEVEL1,
+                HEVC_LEVEL2,
+                HEVC_LEVEL2_1,
+                HEVC_LEVEL3,
+                HEVC_LEVEL3_1,
+                HEVC_LEVEL4,
+                HEVC_LEVEL4_1,
+                HEVC_LEVEL5,
+                HEVC_LEVEL5_1,
+                HEVC_LEVEL5_2,
+                HEVC_LEVEL6,
+                HEVC_LEVEL6_1,
+                HEVC_LEVEL6_2,
+                HEVC_LEVEL8_5,
+};
+
+
 const char* vl_get_version() {
   return version;
 }
@@ -111,10 +148,34 @@ typedef struct vp_multi_s {
 } VPMultiEncHandle;
 
 static int64_t GetNowUs() {
-	struct timeval tv;
-	gettimeofday(&tv, NULL);
-	return (int64_t) tv.tv_sec * 1000000 + (int64_t) tv.tv_usec;
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return (int64_t) tv.tv_sec * 1000000 + (int64_t) tv.tv_usec;
 }
+
+
+static int validateLevel(int stream_type,uint32 level) {
+    int iloop = 0;
+    if (AMV_AVC == stream_type) {
+        for (iloop = 0;iloop < sizeof(avc_supportlevel_list);iloop++) {
+            if (avc_supportlevel_list[iloop] == level) {
+                return level;
+            }
+        }
+        return AVC_LEVEL_AUTO; // firmware determines a level.
+    }
+    else if(AMV_HEVC == stream_type) {
+        for (iloop = 0;iloop < sizeof(hevc_supportlevel_list);iloop++) {
+            if (hevc_supportlevel_list[iloop] == level) {
+                return level;
+            }
+        }
+        return HEVC_LEVEL_NONE; // firmware determines a level.
+    }
+    VLOG(DEBUG,"validateLevel stream_type err!");
+    return 0; //AVC AUTO/HEVC NONE
+}
+
 
 AMVEnc_Status initEncParams(VPMultiEncHandle *handle,
                         vl_codec_id_t codec_id,
@@ -238,7 +299,8 @@ AMVEnc_Status initEncParams(VPMultiEncHandle *handle,
     if (codec_id == CODEC_ID_H265) {
         handle->mEncParams.stream_type = AMV_HEVC;
         handle->mEncParams.profile = encode_info.profile;
-        handle->mEncParams.level = HEVC_LEVEL_NONE; // firmware determines a level.
+        handle->mEncParams.level = validateLevel(AMV_HEVC,encode_info.level);
+        //handle->mEncParams.level = HEVC_LEVEL_NONE; // firmware determines a level.
         handle->mEncParams.hevc_tier = HEVC_TIER_MAIN;
         handle->mEncParams.initQP = 30;
         handle->mEncParams.BitrateScale = ENC_SETTING_OFF;
@@ -246,7 +308,8 @@ AMVEnc_Status initEncParams(VPMultiEncHandle *handle,
     } else if (codec_id == CODEC_ID_H264) {
         handle->mEncParams.stream_type = AMV_AVC;
         handle->mEncParams.profile = encode_info.profile;
-        handle->mEncParams.level = AVC_LEVEL4;
+        handle->mEncParams.level = validateLevel(AMV_AVC,encode_info.level);
+        //handle->mEncParams.level = AVC_LEVEL4;
         handle->mEncParams.initQP = 30;
         handle->mEncParams.BitrateScale = ENC_SETTING_OFF;
     } else {
@@ -464,6 +527,9 @@ int vl_multi_encoder_adjust_h264_sps(VPMultiEncHandle* handle,char *sps_nalu,int
         VLOG(INFO,"new header range =%d,primaries = %d,transfer:%d,matrix:%d", sps.vui.video_full_range_flag,sps.vui.colour_primaries,sps.vui.transfer_characteristics,sps.vui.matrix_coefficients);
     }
 
+    if (AVC_LEVEL_AUTO != handle->mEncParams.level) {
+        sps.level_idc = handle->mEncParams.level;
+    }
     memset(sps_nalu + H264_HEADER_LEN, 0, buffer_len - H264_HEADER_LEN);
 
     bs_init(&bs, sps_nalu + H264_HEADER_LEN, buffer_len - H264_HEADER_LEN);
@@ -584,12 +650,14 @@ void vl_multi_encoder_adjust_h264_header(VPMultiEncHandle* handle,char *header,i
 void vl_multi_encoder_adjust_h265_header(VPMultiEncHandle* handle,char *header,int *dataLength)
 {
     bs_t bs;
+    bs_t bs_v;
     //sps_h265_t sps = {0};
     uint32_t i = 0;
     int vps_nalu_size = 0;
     int sps_nalu_size = 0;
     int pps_nalu_size = 0;
     int new_sps_size = 0;
+    int new_vps_size = 0;
     int vps_start = -1;
     int sps_start = -1;
     int pps_start = -1;
@@ -645,8 +713,25 @@ void vl_multi_encoder_adjust_h265_header(VPMultiEncHandle* handle,char *header,i
     VLOG(ERR,"old header data:%s",tmp);
 #endif
     sps_nalu_size = EBSPtoRBSP(sps_nalu,H265_HEADER_LEN,sps_nalu_size);
+    vps_nalu_size = EBSPtoRBSP(vps_nalu,H265_HEADER_LEN,vps_nalu_size);
 
     pstream_handle = h265bitstream_init();
+    //vps adjust
+    bs_init(&bs_v,vps_nalu + H265_HEADER_LEN, vps_nalu_size - H265_HEADER_LEN);
+
+    read_debug_video_parameter_set_rbsp(pstream_handle, &bs_v);
+    read_debug_rbsp_trailing_bits(pstream_handle,&bs_v);
+    if (HEVC_LEVEL_NONE != handle->mEncParams.level) { //level is valid
+        pstream_handle->ptl->general_level_idc = handle->mEncParams.level;
+        VLOG(INFO,"write level:%d",pstream_handle->ptl->general_level_idc);
+    }
+
+    bs_init(&bs_v,vps_nalu + H265_HEADER_LEN, vps_nalu_size - H265_HEADER_LEN);
+    write_debug_video_parameter_set_rbsp(pstream_handle, &bs_v);
+    new_vps_size = vps_nalu_size;
+    new_vps_size = RBSPtoEBSP(vps_nalu,H265_HEADER_LEN,new_vps_size,0);
+
+    //sps_adjust
     bs_init(&bs, sps_nalu + H265_HEADER_LEN, sps_nalu_size - H265_HEADER_LEN);
     read_debug_seq_parameter_set_rbsp(pstream_handle, &bs);
     read_rbsp_trailing_bits(&bs);
@@ -662,6 +747,9 @@ void vl_multi_encoder_adjust_h265_header(VPMultiEncHandle* handle,char *header,i
         pstream_handle->vui->transfer_characteristics = handle->vui_info.transfer_characteristics;
         pstream_handle->vui->matrix_coeffs = handle->vui_info.matrix_coefficients;
     }
+    if (HEVC_LEVEL_NONE != handle->mEncParams.level) {//level is valid
+        pstream_handle->ptl->general_level_idc = handle->mEncParams.level; //level_idc xts csd check!!
+    }
     VLOG(INFO,"old header sps.vui_parameters_present_flag:%d, range =%d,primaries = %d,transfer:%d,matrix:%d", pstream_handle->sps->vui_parameters_present_flag,pstream_handle->vui->video_full_range_flag,pstream_handle->vui->colour_primaries,pstream_handle->vui->transfer_characteristics,pstream_handle->vui->matrix_coeffs);
 
     memset(sps_nalu + H265_HEADER_LEN, 0, *dataLength - H265_HEADER_LEN);
@@ -671,14 +759,14 @@ void vl_multi_encoder_adjust_h265_header(VPMultiEncHandle* handle,char *header,i
     write_rbsp_trailing_bits(&bs);
     new_sps_size = bs.p - bs.start + H265_HEADER_LEN;
 
-    memset(header, 0, vps_nalu_size + new_sps_size + pps_nalu_size);
+    memset(header, 0, new_vps_size + new_sps_size + pps_nalu_size);
 
-    memcpy(header,vps_nalu, vps_nalu_size);
+    memcpy(header,vps_nalu, new_vps_size);
 
     new_sps_size = RBSPtoEBSP(sps_nalu,H265_HEADER_LEN,new_sps_size,0);
-    memcpy(header + vps_nalu_size,sps_nalu,new_sps_size);
-    memcpy(header + new_sps_size + vps_nalu_size, pps_nalu, pps_nalu_size);
-    *dataLength = new_sps_size + pps_nalu_size + vps_nalu_size;
+    memcpy(header + new_vps_size,sps_nalu,new_sps_size);
+    memcpy(header + new_sps_size + new_vps_size, pps_nalu, pps_nalu_size);
+    *dataLength = new_sps_size + pps_nalu_size + new_vps_size;
 #if 0
     memset(tmp,0,sizeof(tmp));
     memset(tmp1,0,sizeof(tmp1));

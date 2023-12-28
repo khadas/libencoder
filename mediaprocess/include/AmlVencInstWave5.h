@@ -21,6 +21,8 @@ public:
 private:
     bool GetIsSupportSVC();
     int AVCProfileConvert(C2Config::profile_t profile);
+    int AVCLevelConvert(C2Config::level_t Level);
+    int HEVCLevelConvert(C2Config::level_t Level);
     void GenQpTable(stVencParam VencParam,amvenc_qp_param_t &QpParam);
 private:
     bool mIsInit;
