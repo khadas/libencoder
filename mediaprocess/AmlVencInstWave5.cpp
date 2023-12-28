@@ -111,6 +111,7 @@ void AmlVencInstWave5::ExtraInit(amvenc_info_t &VencInfo,amvenc_qp_param_t &QpPa
         VencInfo.width = 256; //cause wave521 not support for width < 256
         ALOGD("actual width:%d is not support,setting width to 256",VencParam.Width);
         mVencParamInst->UpdatePicSize(VencInfo.width,VencInfo.height);
+        mIsChangeResolutionInternal = true;
         //add crop info????????
     }
 

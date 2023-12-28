@@ -65,7 +65,8 @@ AmlVencInst::AmlVencInst()
             :mVencParamInst(NULL),
              mHelper(NULL),
              mVencHandle(0),
-             mRequestSync(false) {
+             mRequestSync(false),
+             mIsChangeResolutionInternal(false) {
     ALOGD("AmlVencInst constructor!");
     gloglevel = 255;
     mHelper = new AmlVencInstHelper;
@@ -97,8 +98,8 @@ amvenc_img_format_t AmlVencInst::PixelFormatConvert(int FormatIn) {
             ALOGE("AML_IMG_FMT_RGBA8888");
             break;
         case HAL_PIXEL_FORMAT_YV12:
-            FormatOut = AML_IMG_FMT_YV12;
-            ALOGE("AML_IMG_FMT_YV12");
+            FormatOut = AML_IMG_FMT_YUV420P;
+            ALOGE("AML_IMG_FMT_YUV420P");
             break;
         default: {
             ALOGE("cannot support colorformat:%x,use default nv21",FormatIn);
@@ -466,7 +467,7 @@ c2_status_t AmlVencInst::CheckPicSize(std::shared_ptr<const C2GraphicView> view,
     memset(&VencParam,0,sizeof(stVencParam));
     mVencParamInst->GetVencParam(VencParam);
 
-    if (VencParam.Width != view->width() || VencParam.Height != view->height()) {
+    if (!mIsChangeResolutionInternal && (VencParam.Width != view->width() || VencParam.Height != view->height())) {
         if (0 == frameIndex) {  //first frame is normally
             AMLVenc_LOG(CODEC2_VENC_LOG_ERR,"pic size :%d x %d,this buffer is:%d x %d,change pic size...",VencParam.Width,VencParam.Height,view->width(),view->height());
             mVencParamInst->UpdatePicSize(view->width(), view->height());

@@ -61,6 +61,7 @@ protected:
     bool mRequestSync;
     //int mFrameRate;
     int mBitRate;
+    bool mIsChangeResolutionInternal;
 };
 
 
