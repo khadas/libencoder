@@ -993,6 +993,15 @@ encoding_metadata_t vl_multi_encoder_encode(vl_codec_handle_t codec_handle,
 
           return result;
         }
+      } else if (videoInput.fmt == AMVENC_RGB888) {
+        VLOG(INFO, "process rgb dma input");
+
+        if (dma_info->num_planes != 1) {
+          VLOG(ERR, "RGBA invalid num_planes %d\n", dma_info->num_planes);
+          result.is_valid = false;
+          result.err_cod = AMVENC_ENCPARAM_MEM_FAIL;
+          return result;
+        }
       } else if (videoInput.fmt == AMVENC_RGBA8888) {
         VLOG(INFO, "process rgba dma input");
 
