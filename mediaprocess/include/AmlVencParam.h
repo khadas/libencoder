@@ -31,7 +31,7 @@ public:
     virtual void GetVencParam(stVencParam &Param) { memcpy(&Param,&mVencParam,sizeof(mVencParam)); };
     virtual void SetSize(int width,int height){ mVencParam.Width = width; mVencParam.Height = height; };
     virtual void SetBitrate(int bitrate){ mVencParam.Bitrate = bitrate; };
-    virtual void SetSyncPeriodSize(int Period) { mVencParam.SyncFramePeriod = Period; };
+    virtual void SetSyncPeriodSize(uint64_t Period) { mVencParam.SyncFramePeriod = Period; };
     virtual void SetFrameRate(int FrameRate) { mVencParam.FrameRate = FrameRate; };
     virtual void SetQpInfo(stQpInfo QpInfo) { memcpy(&mVencParam.QpInfo,&QpInfo,sizeof(QpInfo));};
     virtual void SetLayerCnt(int LayerCount) { mVencParam.LayerCnt = LayerCount;};

@@ -43,6 +43,9 @@ bool AmlVencInstWave5::GetIsSupportSVC() {
     mVencParamInst->GetSVCLimit(SVC);
 
     svc_enable = property_get_bool(ENCODER_PROP_SVC_ENABLE, false);
+    if (SVC.enable && !svc_enable) {
+        ALOGD("hw encoder support svc feuture,use vendor.media.c2.encoder.svc to open it!");
+    }
     return (svc_enable && SVC.enable);
 
 }
@@ -229,7 +232,7 @@ void AmlVencInstWave5::ExtraInit(amvenc_info_t &VencInfo,amvenc_qp_param_t &QpPa
     else {
         VencInfo.gop = IDRPeriod;
     }
-    ALOGD("IDRPeriod:%d",VencParam.SyncFramePeriod);
+    ALOGD("mSyncFramePeriod:%" PRId64",gop:%d",VencParam.SyncFramePeriod,VencInfo.gop);
 
     if (VencInfo.img_format != mActualFormat) {
         VencInfo.img_format = (amvenc_img_format_t)mActualFormat;
