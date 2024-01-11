@@ -73,8 +73,12 @@ int AmlVencInstWave5::AVCProfileConvert(C2Config::profile_t profile) {
 
 int AmlVencInstWave5::AVCLevelConvert(C2Config::level_t Level) {
 //only for 264
+    ALOGE("AVCLevelConvert level:%x",Level);
     int retLevel = 0;
     switch (Level) {
+        case LEVEL_AVC_1:
+            retLevel = MEDIA_AVC_LEVEL1;
+            break;
         case LEVEL_AVC_1B:
             retLevel = MEDIA_AVC_LEVEL1_B;
             break;
