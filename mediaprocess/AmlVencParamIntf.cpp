@@ -6,11 +6,11 @@
 namespace android {
 
 
-IAmlVencParam *IAmlVencParam::GetInstance() {
+IAmlVencParam *VencParamGetInstance() {
     return new AmlVencParamWave5;
 }
 
-void IAmlVencParam::DelInstance(IAmlVencParam *pInstance) {
+void VencParamDelInstance(IAmlVencParam *pInstance) {
     if (NULL != pInstance) {
         delete pInstance;
         pInstance = NULL;

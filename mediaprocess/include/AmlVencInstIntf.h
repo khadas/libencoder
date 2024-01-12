@@ -61,15 +61,10 @@ public:
     virtual c2_status_t ProcessOneFrame(stInputFrameInfo InputFrameInfo,stOutputFrame &OutFrame) = 0;
     virtual bool Destroy() = 0;
     virtual void SetVencParamInst(IAmlVencParam *pVencParamInst) = 0;
-
-public:
-    static IAmlVencInst *GetInstance();
-    static void DelInstance(IAmlVencInst *pInstance);
-
-
 };
 
-
+extern "C" IAmlVencInst *VencGetInstance();
+extern "C" void VencDelInstance(IAmlVencInst *pInstance);
 
 }
 

@@ -128,12 +128,10 @@ public:
     virtual void SetCodecType(eCodecType CodecType) = 0;
     virtual eCodecType GetCodecType() = 0;
 
-public:
-    static IAmlVencParam *GetInstance();
-    static void DelInstance(IAmlVencParam *pInstance);
-
 };
 
+extern "C" IAmlVencParam *VencParamGetInstance();
+extern "C" void VencParamDelInstance(IAmlVencParam *pInstance);
 
 
 }

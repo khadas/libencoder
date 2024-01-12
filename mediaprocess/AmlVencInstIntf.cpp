@@ -8,12 +8,12 @@ namespace android {
 
 
 
-IAmlVencInst *IAmlVencInst::GetInstance() {
+IAmlVencInst *VencGetInstance() {
     return new AmlVencInstWave5;
 }
 
-void IAmlVencInst::DelInstance(IAmlVencInst *pInstance) {
-    if (NULL != pInstance) {
+void VencDelInstance(IAmlVencInst *pInstance) {
+    if ( NULL != pInstance ) {
         delete pInstance;
         pInstance = NULL;
     }
