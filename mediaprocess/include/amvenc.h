@@ -64,6 +64,14 @@ typedef enum {
     AML_DMA_TYPE = 3,
 } amvenc_buffer_type_t;
 /* encoder info config */
+
+typedef struct crop_info {
+    int left;
+    int top;
+    int right;
+    int bottom;
+}crop_info_t;
+
 typedef struct amvenc_info {
     int width;
     int height;
@@ -131,6 +139,8 @@ typedef struct amvenc_info {
     uint8_t colour_primaries;
     uint8_t transfer_characteristics;
     uint8_t matrix_coefficients;
+    bool crop_enable;
+    crop_info_t crop;
 } amvenc_info_t;
 
 /* dma buffer info*/

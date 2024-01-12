@@ -64,6 +64,14 @@ typedef enum {
     AML_DMA_TYPE = 3,
 } amvenc_buffer_type_t;
 /* encoder info config */
+
+typedef struct crop_info {
+    int left;
+    int top;
+    int right;
+    int bottom;
+}crop_info_t;
+
 typedef struct amvenc_info {
     int width;
     int height;
@@ -92,12 +100,12 @@ typedef struct amvenc_info {
     int intra_refresh_arg; /* number of MB(CTU) rows, columns, MB(CTU)s */
     int profile; /* encoding profile: 0 auto (H.264 high, H.265 main profile) */
                /* H.264 1: baseline 2: Main, 3 High profile*/
-    int level;
     /*frame rotation angle before encoding, counter clock-wise
     0: no rotation
     90: rotate 90 degree
     180: rotate 180 degree
     270: rotate 270 degree*/
+    int level;
     uint32_t frame_rotation;
     /*frame mirroring before encoding
     0: no mirroring
@@ -131,6 +139,8 @@ typedef struct amvenc_info {
     uint8_t colour_primaries;
     uint8_t transfer_characteristics;
     uint8_t matrix_coefficients;
+    bool crop_enable;
+    crop_info_t crop;
 } amvenc_info_t;
 
 /* dma buffer info*/

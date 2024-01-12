@@ -343,6 +343,14 @@ AMVEnc_Status initEncParams(VPMultiEncHandle *handle,
     handle->vui_info.colour_primaries = encode_info.colour_primaries;
     handle->vui_info.transfer_characteristics = encode_info.transfer_characteristics;
     handle->vui_info.matrix_coefficients = encode_info.matrix_coefficients;
+
+    handle->mEncParams.crop_enable = encode_info.crop_enable;
+    if (handle->mEncParams.crop_enable) {
+        handle->mEncParams.crop_left = encode_info.crop.left;
+        handle->mEncParams.crop_top = encode_info.crop.top;
+        handle->mEncParams.crop_right = encode_info.crop.right;
+        handle->mEncParams.crop_bottom = encode_info.crop.bottom;
+    }
     return AMVENC_SUCCESS;
 }
 
@@ -524,11 +532,24 @@ int vl_multi_encoder_adjust_h264_sps(VPMultiEncHandle* handle,char *sps_nalu,int
             sps.vui.transfer_characteristics = handle->vui_info.transfer_characteristics;
             sps.vui.matrix_coefficients = handle->vui_info.matrix_coefficients;
         }
-        VLOG(INFO,"new header range =%d,primaries = %d,transfer:%d,matrix:%d", sps.vui.video_full_range_flag,sps.vui.colour_primaries,sps.vui.transfer_characteristics,sps.vui.matrix_coefficients);
+        VLOG(INFO,"new header range =%d,primaries = %d,transfer:%d,matrix:%d ", sps.vui.video_full_range_flag,sps.vui.colour_primaries,sps.vui.transfer_characteristics,sps.vui.matrix_coefficients);
     }
 
     if (AVC_LEVEL_AUTO != handle->mEncParams.level) {
         sps.level_idc = handle->mEncParams.level;
+    }
+
+    sps.frame_cropping_flag = handle->mEncParams.crop_enable;//1;
+    if (sps.frame_cropping_flag) {
+        sps.frame_crop_top_offset = handle->mEncParams.crop_top / 2;
+        sps.frame_crop_left_offset = handle->mEncParams.crop_left / 2;
+        sps.frame_crop_right_offset = (handle->mEncParams.width - handle->mEncParams.crop_right) / 2;//0;//(256 - 176)/2;
+        sps.frame_crop_bottom_offset = (handle->mEncParams.height - handle->mEncParams.crop_bottom) / 2;
+        VLOG(ERR,"crop top:%d,left:%d,right:%d,bottom:%d,enable:%d",sps.frame_crop_top_offset,
+                                                                    sps.frame_crop_left_offset,
+                                                                    sps.frame_crop_right_offset,
+                                                                    sps.frame_crop_bottom_offset,
+                                                                    sps.frame_cropping_flag);
     }
     memset(sps_nalu + H264_HEADER_LEN, 0, buffer_len - H264_HEADER_LEN);
 
@@ -752,6 +773,19 @@ void vl_multi_encoder_adjust_h265_header(VPMultiEncHandle* handle,char *header,i
     }
     VLOG(INFO,"old header sps.vui_parameters_present_flag:%d, range =%d,primaries = %d,transfer:%d,matrix:%d", pstream_handle->sps->vui_parameters_present_flag,pstream_handle->vui->video_full_range_flag,pstream_handle->vui->colour_primaries,pstream_handle->vui->transfer_characteristics,pstream_handle->vui->matrix_coeffs);
 
+
+    pstream_handle->sps->conformance_window_flag = handle->mEncParams.crop_enable;//1;
+    if (pstream_handle->sps->conformance_window_flag) {
+        pstream_handle->sps->conf_win_top_offse = handle->mEncParams.crop_top / 2;
+        pstream_handle->sps->conf_win_left_offset = handle->mEncParams.crop_left / 2;
+        pstream_handle->sps->conf_win_right_offset = (handle->mEncParams.width - handle->mEncParams.crop_right) / 2;//0;//(256 - 176)/2;
+        pstream_handle->sps->conf_win_bottom_offset = (handle->mEncParams.height - handle->mEncParams.crop_bottom) / 2;
+        VLOG(ERR,"crop top:%d,left:%d,right:%d,bottom:%d,enable:%d",pstream_handle->sps->conf_win_top_offse,
+                                                                    pstream_handle->sps->conf_win_left_offset,
+                                                                    pstream_handle->sps->conf_win_right_offset,
+                                                                    pstream_handle->sps->conf_win_bottom_offset,
+                                                                    pstream_handle->sps->conformance_window_flag);
+    }
     memset(sps_nalu + H265_HEADER_LEN, 0, *dataLength - H265_HEADER_LEN);
 
     bs_init(&bs, sps_nalu + H265_HEADER_LEN, *dataLength - H265_HEADER_LEN);

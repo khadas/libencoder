@@ -170,6 +170,11 @@ typedef struct EncInitParams_s {
   uint32 slice_mode;   /* multi slice mode  0 default*/
   uint32 slice_arg;    /* multi slce parameters */
   int cust_qp_delta;
+  bool crop_enable;
+  int crop_left;
+  int crop_top;
+  int crop_right;
+  int crop_bottom;
 } AMVEncInitParams;
 
 extern amv_enc_handle_t AML_MultiEncInitialize(AMVEncInitParams* encParam);

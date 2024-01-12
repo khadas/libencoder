@@ -214,19 +214,23 @@ void AmlVencInstWave5::GenQpTable(stVencParam VencParam,amvenc_qp_param_t &QpPar
 void AmlVencInstWave5::ExtraInit(amvenc_info_t &VencInfo,amvenc_qp_param_t &QpParam) {
     stVencParam VencParam;
     int IDRPeriod = 0;
-    ALOGE("ExtraInit!!");    memset(&VencParam,0,sizeof(VencParam));
-    mVencParamInst->GetVencParam(VencParam);
+    memset(&VencParam,0,sizeof(VencParam));
+    mVencParamInst->GetVencParam(VencParam);
 
     VencInfo.qp_mode = VencParam.QpInfo.enable;
     GenQpTable(VencParam,QpParam);
 
     VencInfo.width = VencParam.Width;
+    VencInfo.height = VencParam.Height;
     if (VencParam.Width < 256) {
+        VencInfo.crop_enable = true;
+        VencInfo.crop.right = VencParam.Width;
+        VencInfo.crop.bottom = VencParam.Height;
+
         VencInfo.width = 256; //cause wave521 not support for width < 256
         ALOGD("actual width:%d is not support,setting width to 256",VencParam.Width);
         mVencParamInst->UpdatePicSize(VencInfo.width,VencInfo.height);
         mIsChangeResolutionInternal = true;
-        //add crop info????????
     }
 
     IDRPeriod = (VencParam.SyncFramePeriod / 1000000) * VencParam.FrameRate;

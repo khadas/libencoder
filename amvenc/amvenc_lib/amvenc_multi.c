@@ -197,6 +197,14 @@ amvenc_handle_t amvenc_multi_init(amvenc_codec_id_t vcodec_id,
     encode_info.transfer_characteristics = vcodec_info.transfer_characteristics;
     encode_info.matrix_coefficients = vcodec_info.matrix_coefficients;
 
+    encode_info.crop_enable = vcodec_info.crop_enable;
+    if (encode_info.crop_enable) {
+        encode_info.crop.top = vcodec_info.crop.top;
+        encode_info.crop.left = vcodec_info.crop.left;
+        encode_info.crop.right = vcodec_info.crop.right;
+        encode_info.crop.bottom = vcodec_info.crop.bottom;
+    }
+
     qp_tbl.qp_min = qp_param->qp_min;
     qp_tbl.qp_max = qp_param->qp_max;
     qp_tbl.qp_I_base = qp_param->qp_I_base;
@@ -208,7 +216,6 @@ amvenc_handle_t amvenc_multi_init(amvenc_codec_id_t vcodec_id,
     qp_tbl.qp_P_max = qp_param->qp_P_max;
     qp_tbl.qp_B_min = qp_param->qp_B_min;
     qp_tbl.qp_B_max = qp_param->qp_B_max;
-
     if (encoder_ops.init)
         handle_enc = encoder_ops.init(codec_id, encode_info, &qp_tbl);
 

@@ -101,6 +101,14 @@ typedef enum {
   DMA_TYPE = 3,
 } vl_buffer_type_t;
 
+typedef struct crop_info_multi {
+    int left;
+    int top;
+    int right;
+    int bottom;
+}crop_info_multi_t;
+
+
 /* encoder features configure flags bit masks for enc_feature_opts */
 /* Enable RIO feature.
         bit field value 1: enable, 0: disable (default) */
@@ -179,6 +187,8 @@ typedef struct vl_encode_info {
   uint8_t colour_primaries;
   uint8_t transfer_characteristics;
   uint8_t matrix_coefficients;
+  bool crop_enable;
+  crop_info_multi_t crop;
 } vl_encode_info_t;
 
 /* dma buffer info*/
