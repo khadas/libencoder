@@ -8,11 +8,13 @@
 #include "amvenc_multi.h"
 #include "amvenc_264.h"
 #include "amvenc_265.h"
+#include "amvenc_vers.h"
 
 
 #define AMVENC_MULTI_DEVICE "/dev/amvenc_multi"
 #define AMVENC_264_DEVICE   "/dev/amvenc_avc"
 #define AMVENC_265_DEVICE   "/dev/HevcEnc"
+#define AMVENC_VERS_DEVICE   "/dev/vc8000"
 
 typedef enum amvenc_hw_e {
     AMVENC_UNKNOWN,
@@ -72,11 +74,22 @@ static const struct amvenc_manager_s amvenc_265_data = {
     .unloadModule = amvenc_265_unload_Module,
 };
 
+static const struct amvenc_manager_s amvenc_vers_data = {
+    .loadModule = amvenc_vers_load_Module,
+    .init = amvenc_vers_init,
+    .generate_header = amvenc_vers_generate_header,
+    .encode = amvenc_vers_encode,
+    .change_bitrate = amvenc_vers_change_bitrate,
+    .destroy = amvenc_vers_destroy,
+    .unloadModule = amvenc_vers_unload_Module,
+};
+
 const static struct amvenc_manager_s *amvenc_manager[] = {
     NULL,
     &amvenc_multi_data,
     &amvenc_264_data,
     &amvenc_265_data,
+    &amvenc_vers_data,
     NULL,
 };
 
@@ -101,6 +114,11 @@ int selectHW(amvenc_codec_id_t codec_id, int *hw_type)
             VLOG(DEBUG, "amvenc_264 present");
             ret = 0;
         }
+        else if (access(AMVENC_VERS_DEVICE, F_OK ) != -1) {
+            *hw_type = AMVENC_VERS;
+            VLOG(DEBUG, "amvenc_vers present");
+            ret = 0;
+        }
         else {
             VLOG(ERR, "can not find available h.264 driver!!!,please check!");
         }
@@ -114,6 +132,11 @@ int selectHW(amvenc_codec_id_t codec_id, int *hw_type)
         else if (access(AMVENC_264_DEVICE, F_OK ) != -1) {
             *hw_type = AMVENC_265;
             VLOG(DEBUG, "amvenc_265 present");
+            ret = 0;
+        }
+        else if (access(AMVENC_VERS_DEVICE, F_OK ) != -1) {
+            *hw_type = AMVENC_VERS;
+            VLOG(DEBUG, "amvenc_vers present");
             ret = 0;
         }
         else {
