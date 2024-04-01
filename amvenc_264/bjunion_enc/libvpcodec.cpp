@@ -200,7 +200,7 @@ int initEncParams(AMVEncHandle *handle, vl_init_params_t init_param)
     return 0;
 }
 
-bool vl_video_encode_modifyheader(vl_vui_params_t vui,int framerate,int level,uint8_t *nal, unsigned int *dataLength)
+bool vl_video_encode_modifyheader(vl_vui_params_t vui,int framerate,int level,int height,int width,uint8_t *nal, unsigned int *dataLength)
 {
     bs_t bs;
     sps_t sps;
@@ -255,6 +255,13 @@ bool vl_video_encode_modifyheader(vl_vui_params_t vui,int framerate,int level,ui
     sps.vui.num_units_in_tick = 1000;
     sps.vui.time_scale = framerate * 2;
     sps.vui.fixed_frame_rate_flag = 1;
+    if (height != (sps.pic_height_in_map_units_minus1 + 1) << 4 || width != (sps.pic_width_in_mbs_minus1 + 1) << 4) {
+        sps.frame_cropping_flag = 1;
+        sps.frame_crop_right_offset = (((sps.pic_width_in_mbs_minus1 + 1) << 4) - width) / 2;
+        sps.frame_crop_bottom_offset = (((sps.pic_height_in_map_units_minus1 + 1) << 4) - height) / 2;
+        VLOG(NONE,"crop info bottom:%d,height:%d,right:%d,width:%d",sps.frame_crop_bottom_offset,height,
+                                                                    sps.frame_crop_right_offset,width);
+    }
 
     memset(new_sps + 5, 0, sizeof(new_sps) - 5);
     bs_init(&bs, new_sps + 5, sizeof(new_sps) - 5);
@@ -526,7 +533,8 @@ int vl_video_encode_header(vl_codec_handle_t codec_handle, vl_vui_params_t vui, 
         ret = AML_HWEncNAL(handle, (unsigned char *)out, (unsigned int *)&in_size/*should be out size*/, &type);
         if (ret == AMVENC_SUCCESS)
         {
-            vl_video_encode_modifyheader(vui,handle->mEncParams.frame_rate,(int)handle->mEncParams.level,out,(unsigned int *)&in_size);
+            vl_video_encode_modifyheader(vui,handle->mEncParams.frame_rate,(int)handle->mEncParams.level,handle->mEncParams.height,
+                                         handle->mEncParams.width,out,(unsigned int *)&in_size);
             handle->mSPSPPSDataSize = 0;
             handle->mSPSPPSData = (uint8_t *)malloc(in_size);
             if (handle->mSPSPPSData)
