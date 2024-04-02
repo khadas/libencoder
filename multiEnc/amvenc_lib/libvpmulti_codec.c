@@ -539,12 +539,22 @@ int vl_multi_encoder_adjust_h264_sps(VPMultiEncHandle* handle,char *sps_nalu,int
         sps.level_idc = handle->mEncParams.level;
     }
 
-    sps.frame_cropping_flag = handle->mEncParams.crop_enable;//1;
+    //sps.frame_cropping_flag = handle->mEncParams.crop_enable;//1;
+    if (handle->mEncParams.crop_enable || ((sps.pic_width_in_mbs_minus1 + 1) << 4) != handle->mEncParams.width ||
+        ((sps.pic_height_in_map_units_minus1 + 1) << 4) != handle->mEncParams.height) {
+        sps.frame_cropping_flag = 1;
+    }
     if (sps.frame_cropping_flag) {
         sps.frame_crop_top_offset = handle->mEncParams.crop_top / 2;
         sps.frame_crop_left_offset = handle->mEncParams.crop_left / 2;
-        sps.frame_crop_right_offset = (handle->mEncParams.width - handle->mEncParams.crop_right) / 2;//0;//(256 - 176)/2;
-        sps.frame_crop_bottom_offset = (handle->mEncParams.height - handle->mEncParams.crop_bottom) / 2;
+        if (handle->mEncParams.crop_right || handle->mEncParams.crop_bottom) {
+            sps.frame_crop_right_offset = (handle->mEncParams.width - handle->mEncParams.crop_right) / 2;//0;//(256 - 176)/2;
+            sps.frame_crop_bottom_offset = (handle->mEncParams.height - handle->mEncParams.crop_bottom) / 2;
+        }
+        else {
+            sps.frame_crop_right_offset = (((sps.pic_width_in_mbs_minus1 + 1) << 4) - handle->mEncParams.width) / 2;
+            sps.frame_crop_bottom_offset = (((sps.pic_height_in_map_units_minus1 + 1) << 4) - handle->mEncParams.height) / 2;
+        }
         VLOG(ERR,"crop top:%d,left:%d,right:%d,bottom:%d,enable:%d",sps.frame_crop_top_offset,
                                                                     sps.frame_crop_left_offset,
                                                                     sps.frame_crop_right_offset,
@@ -774,12 +784,23 @@ void vl_multi_encoder_adjust_h265_header(VPMultiEncHandle* handle,char *header,i
     VLOG(INFO,"old header sps.vui_parameters_present_flag:%d, range =%d,primaries = %d,transfer:%d,matrix:%d", pstream_handle->sps->vui_parameters_present_flag,pstream_handle->vui->video_full_range_flag,pstream_handle->vui->colour_primaries,pstream_handle->vui->transfer_characteristics,pstream_handle->vui->matrix_coeffs);
 
 
-    pstream_handle->sps->conformance_window_flag = handle->mEncParams.crop_enable;//1;
+    if (handle->mEncParams.crop_enable || pstream_handle->sps->pic_width_in_luma_samples != handle->mEncParams.width ||
+        pstream_handle->sps->pic_height_in_luma_samples != handle->mEncParams.height) {
+        pstream_handle->sps->conformance_window_flag = 1;
+    }
+    //pstream_handle->sps->conformance_window_flag = handle->mEncParams.crop_enable;//1;
     if (pstream_handle->sps->conformance_window_flag) {
         pstream_handle->sps->conf_win_top_offse = handle->mEncParams.crop_top / 2;
         pstream_handle->sps->conf_win_left_offset = handle->mEncParams.crop_left / 2;
-        pstream_handle->sps->conf_win_right_offset = (handle->mEncParams.width - handle->mEncParams.crop_right) / 2;//0;//(256 - 176)/2;
-        pstream_handle->sps->conf_win_bottom_offset = (handle->mEncParams.height - handle->mEncParams.crop_bottom) / 2;
+        if (handle->mEncParams.crop_right || handle->mEncParams.crop_bottom) {
+            pstream_handle->sps->conf_win_right_offset = (handle->mEncParams.width - handle->mEncParams.crop_right) / 2;//0;//(256 - 176)/2;
+            pstream_handle->sps->conf_win_bottom_offset = (handle->mEncParams.height - handle->mEncParams.crop_bottom) / 2;
+        }
+        else {
+            pstream_handle->sps->conf_win_right_offset = (pstream_handle->sps->pic_width_in_luma_samples - handle->mEncParams.width) / 2;
+            pstream_handle->sps->conf_win_bottom_offset = (pstream_handle->sps->pic_height_in_luma_samples - handle->mEncParams.height) / 2;
+        }
+
         VLOG(ERR,"crop top:%d,left:%d,right:%d,bottom:%d,enable:%d",pstream_handle->sps->conf_win_top_offse,
                                                                     pstream_handle->sps->conf_win_left_offset,
                                                                     pstream_handle->sps->conf_win_right_offset,
