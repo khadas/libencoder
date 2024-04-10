@@ -153,7 +153,9 @@ bool AmlVencInst::InitEncoder() {
     mBitRate = VencParam.Bitrate;
 
     if (C2_OK == genVuiParam(VencParam,(int32_t *)&VencInfo.colour_primaries,(int32_t *)&VencInfo.transfer_characteristics,(int32_t *)&VencInfo.matrix_coefficients,(bool *)&VencInfo.video_full_range_flag)) {
-        VencInfo.vui_parameters_present_flag = true;
+        VencInfo.vui_parameters_present_flag = 1;
+        VencInfo.video_signal_type_present_flag = 1;
+        VencInfo.colour_description_present_flag = 1;
         ALOGD("enable vui info");
     }
 

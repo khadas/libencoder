@@ -175,13 +175,13 @@ amvenc_handle_t amvenc_vers_init(amvenc_codec_id_t vcodec_id,
     encode_info.strict_rc_skip_thresh = vcodec_info.strict_rc_skip_thresh;
     encode_info.bitstream_buf_sz_kb = vcodec_info.bitstream_buf_sz_kb;
 
-    //encode_info.vui_parameters_present_flag = vcodec_info.vui_parameters_present_flag;
-    //encode_info.video_full_range_flag = vcodec_info.video_full_range_flag;
-    //encode_info.video_signal_type_present_flag = vcodec_info.video_signal_type_present_flag;
-    //encode_info.colour_description_present_flag = vcodec_info.colour_description_present_flag;
-    //encode_info.colour_primaries = vcodec_info.colour_primaries;
-    //encode_info.transfer_characteristics = vcodec_info.transfer_characteristics;
-    ///encode_info.matrix_coefficients = vcodec_info.matrix_coefficients;
+    encode_info.vui_parameters_present_flag = vcodec_info.vui_parameters_present_flag;
+    encode_info.video_full_range_flag = vcodec_info.video_full_range_flag;
+    encode_info.video_signal_type_present_flag = vcodec_info.video_signal_type_present_flag;
+    encode_info.colour_description_present_flag = vcodec_info.colour_description_present_flag;
+    encode_info.colour_primaries = vcodec_info.colour_primaries;
+    encode_info.transfer_characteristics = vcodec_info.transfer_characteristics;
+    encode_info.matrix_coefficients = vcodec_info.matrix_coefficients;
 
     //qp_tbl.qp_min = qp_param->qp_min;
     //qp_tbl.qp_max = qp_param->qp_max;

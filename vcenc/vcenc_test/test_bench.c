@@ -1173,6 +1173,12 @@ i32 initEncParams(VPMultiEncHandle *handle,
     handle->cml.outReconFrame = 0;
     handle->cml.lumWidthSrc = encode_info.width;
     handle->cml.lumHeightSrc = encode_info.height;
+    handle->cml.vuiVideoSignalTypePresentFlag = encode_info.video_signal_type_present_flag;
+    handle->cml.vuiColorDescripPresentFlag = encode_info.colour_description_present_flag;
+    handle->cml.vuiColorPrimaries = encode_info.colour_primaries;
+    handle->cml.vuiTransferCharacteristics = encode_info.transfer_characteristics;
+    handle->cml.vuiMatrixCoefficients = encode_info.matrix_coefficients;
+    handle->cml.videoRange = encode_info.video_full_range_flag;
 
     if (MATRIX_BT601 == encode_info.matrix_coefficients) {
         handle->cml.colorConversion = VCENC_RGBTOYUV_BT601_FULL_RANGE; //default use full range
