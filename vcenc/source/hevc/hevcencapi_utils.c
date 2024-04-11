@@ -2075,6 +2075,7 @@ VCEncRet SinglePassEnqueueJob(struct vcenc_instance *vcenc_instance, const VCEnc
         // current next idr > picCnt or there is no next idr, reset next idr.
         vcenc_instance->nextIdrCnt = pEncIn->picture_cnt;
     }
+
     //match frame with parameter
     EncCodingCtrlParam *pEncCodingCtrlParam =
         (EncCodingCtrlParam *)queue_head(&vcenc_instance->codingCtrl.codingCtrlQueue);

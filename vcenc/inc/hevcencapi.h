@@ -1737,6 +1737,8 @@ typedef struct {
                                   * busLuma, busChromaU and busChromaV for the second tile to the last tile will
                                   * be filled according to tile distribution.
                                   */
+    u32 luma_stride;
+    u32 chroma_stride;
 } VCEncIn;
 
 /** \brief LTR configure structure */

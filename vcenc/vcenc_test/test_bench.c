@@ -1434,11 +1434,13 @@ i32 encode_nal(vc_codec_handle_t codec_handle,
         struct versdrv_dma_buf_info_t versdrv_dma_buf_info;
         versdrv_dma_buf_info.num_planes = in_buffer_info->buf_info.dma_info.num_planes;
         versdrv_dma_buf_info.fd[0] = in_buffer_info->buf_info.dma_info.shared_fd[0];
+        pEncIn->luma_stride = in_buffer_info->buf_stride;
+        pEncIn->chroma_stride = in_buffer_info->buf_stride;
         ret = ioctl(g_fd_enc, HANTRO_IOCTL_CONFIG_DMA, &versdrv_dma_buf_info);
         pEncIn->busLuma = versdrv_dma_buf_info.phys_addr[0];
-        pEncIn->busChromaU = pEncIn->busLuma + handle->cml.lumWidthSrc*handle->cml.lumHeightSrc;
+        pEncIn->busChromaU = pEncIn->busLuma + pEncIn->luma_stride * handle->cml.lumHeightSrc;
         if (handle->cml.inputFormat == VCENC_YUV420_PLANAR)
-            pEncIn->busChromaV = pEncIn->busChromaU + handle->cml.lumWidthSrc*handle->cml.lumHeightSrc/4;
+            pEncIn->busChromaV = pEncIn->busChromaU + pEncIn->luma_stride * handle->cml.lumHeightSrc/4;
     } else if (VC_CANVAS_TYPE == in_buffer_info->buf_type) {
         struct versdrv_dma_buf_info_t versdrv_dma_buf_info;
         versdrv_dma_buf_info.canvas_index = in_buffer_info->buf_info.canvas;
@@ -1447,28 +1449,30 @@ i32 encode_nal(vc_codec_handle_t codec_handle,
         pEncIn->busChromaU = pEncIn->busLuma + handle->cml.lumWidthSrc*handle->cml.lumHeightSrc;
         pEncIn->busChromaV = pEncIn->busChromaU;
     } else {
+        pEncIn->luma_stride = in_buffer_info->buf_stride;
+        pEncIn->chroma_stride = in_buffer_info->buf_stride;
         switch (handle->cml.inputFormat) {
             case VCENC_YUV420_PLANAR: {
                 /* Lum */
-                memcpy(handle->tb.lum, (unsigned char*)in_buffer_info->buf_info.in_ptr[0],handle->cml.lumWidthSrc*handle->cml.lumHeightSrc);
+                memcpy(handle->tb.lum, (unsigned char*)in_buffer_info->buf_info.in_ptr[0],pEncIn->luma_stride*handle->cml.lumHeightSrc);
 
                 /* Cb */
-                memcpy(handle->tb.cb, (unsigned char*)in_buffer_info->buf_info.in_ptr[0]+handle->cml.lumWidthSrc*handle->cml.lumHeightSrc,handle->cml.lumWidthSrc*handle->cml.lumHeightSrc/4);
+                memcpy(handle->tb.cb, (unsigned char*)in_buffer_info->buf_info.in_ptr[0]+pEncIn->luma_stride*handle->cml.lumHeightSrc,pEncIn->luma_stride*handle->cml.lumHeightSrc/4);
 
                 /* Cr */
-                memcpy(handle->tb.cr, (unsigned char*)in_buffer_info->buf_info.in_ptr[0]+handle->cml.lumWidthSrc*handle->cml.lumHeightSrc*5/4,handle->cml.lumWidthSrc*handle->cml.lumHeightSrc/4);
+                memcpy(handle->tb.cr, (unsigned char*)in_buffer_info->buf_info.in_ptr[0]+pEncIn->luma_stride*handle->cml.lumHeightSrc*5/4,pEncIn->luma_stride*handle->cml.lumHeightSrc/4);
                 break;
             }
             case VCENC_YUV420_SEMIPLANAR:
             case VCENC_YUV420_SEMIPLANAR_VU: {
                 /* Lum */
-                memcpy(handle->tb.lum, (unsigned char*)in_buffer_info->buf_info.in_ptr[0],handle->cml.lumWidthSrc*handle->cml.lumHeightSrc);
+                memcpy(handle->tb.lum, (unsigned char*)in_buffer_info->buf_info.in_ptr[0],pEncIn->luma_stride*handle->cml.lumHeightSrc);
                 /* CbCr */
-                memcpy(handle->tb.cb, (unsigned char*)in_buffer_info->buf_info.in_ptr[0]+handle->cml.lumWidthSrc*handle->cml.lumHeightSrc,handle->cml.lumWidthSrc*handle->cml.lumHeightSrc/2);
+                memcpy(handle->tb.cb, (unsigned char*)in_buffer_info->buf_info.in_ptr[0]+pEncIn->luma_stride*handle->cml.lumHeightSrc,pEncIn->luma_stride*handle->cml.lumHeightSrc/2);
                 break;
             }
             case VCENC_BGR888: {
-                memcpy(handle->tb.lum, (unsigned char*)in_buffer_info->buf_info.in_ptr[0],handle->cml.lumWidthSrc*handle->cml.lumHeightSrc*4);
+                memcpy(handle->tb.lum, (unsigned char*)in_buffer_info->buf_info.in_ptr[0],pEncIn->luma_stride*handle->cml.lumHeightSrc*4);
                 break;
             }
         }

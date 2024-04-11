@@ -7326,6 +7326,12 @@ VCEncRet VCEncStrmEncodeExt(VCEncInst inst, VCEncIn *pEncIn, const VCEncExtParaI
     asic->regs.rcQpDeltaRange = vcenc_instance->rateControl.rcQpDeltaRange;
     asic->regs.rcBaseMBComplexity = vcenc_instance->rateControl.rcBaseMBComplexity;
 
+    if (pEncIn->luma_stride != 0 && pEncIn->chroma_stride != 0) {
+        asic->regs.input_luma_stride = pEncIn->luma_stride;
+        asic->regs.input_chroma_stride = pEncIn->chroma_stride;
+        APITRACEERR("luma_stride:%d,chroma_stride:%d",asic->regs.input_luma_stride,asic->regs.input_chroma_stride);
+    }
+
     if (vcenc_instance->pass == 2) {
         i32 i;
         i32 nBlk = (vcenc_instance->width / 8) * (vcenc_instance->height / 8);
