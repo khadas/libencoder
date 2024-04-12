@@ -43,6 +43,10 @@
 #define HEVCERR_OUTPUT stdout
 #define MAX_GOP_LEN 300
 
+//coloraspect matrix convert
+#define MATRIX_BT601   6
+#define MATRIX_BT709   1
+
 /* The 2 defines below should be reconsidered. */
 #ifndef LEAST_MONITOR_FRAME
 #define LEAST_MONITOR_FRAME 3
@@ -1169,6 +1173,13 @@ i32 initEncParams(VPMultiEncHandle *handle,
     handle->cml.outReconFrame = 0;
     handle->cml.lumWidthSrc = encode_info.width;
     handle->cml.lumHeightSrc = encode_info.height;
+
+    if (MATRIX_BT601 == encode_info.matrix_coefficients) {
+        handle->cml.colorConversion = VCENC_RGBTOYUV_BT601_FULL_RANGE; //default use full range
+    }
+    else if (MATRIX_BT709 == encode_info.matrix_coefficients) {
+        handle->cml.colorConversion = VCENC_RGBTOYUV_BT709_FULL_RANGE; //default use full range
+    }
 
     if (encode_info.img_format == VC_IMG_FMT_NV12) {
         handle->cml.inputFormat = VCENC_YUV420_SEMIPLANAR;
