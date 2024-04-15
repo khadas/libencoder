@@ -264,6 +264,9 @@ amvenc_metadata_t amvenc_vers_encode(amvenc_handle_t handle,
         case AML_FRAME_TYPE_I:
             enc_frame_type = VC_FRAME_TYPE_I;
             break;
+        case AML_FRAME_TYPE_IDR:
+            enc_frame_type = VC_FRAME_TYPE_IDR;
+            break;
         default:
             break;
     }
