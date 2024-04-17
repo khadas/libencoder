@@ -126,6 +126,8 @@ amvenc_handle_t amvenc_vers_init(amvenc_codec_id_t vcodec_id,
     encode_info.bit_rate = vcodec_info.bit_rate;
     encode_info.gop = vcodec_info.gop;
     encode_info.prepend_spspps_to_idr_frames = vcodec_info.prepend_spspps_to_idr_frames;
+    encode_info.profile = vcodec_info.profile;
+    encode_info.level = vcodec_info.level;
 
 
     switch (vcodec_info.img_format)

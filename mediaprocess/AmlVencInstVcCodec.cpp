@@ -9,9 +9,10 @@
 namespace android {
 
 #define ENC_PROFILE_AUTO        0
-#define ENC_PROFILE_BASELINE    1
-#define ENC_PROFILE_MAIN        2
-#define ENC_PROFILE_HIGH        3
+#define ENC_PROFILE_BASELINE    9
+#define ENC_PROFILE_MAIN        10
+#define ENC_PROFILE_HIGH        11
+
 
 
 
@@ -60,7 +61,7 @@ int AmlVencInstVcCodec::AVCProfileConvert(C2Config::profile_t profile) {
             retProfile = ENC_PROFILE_HIGH;
             break;
         default:
-            retProfile = ENC_PROFILE_AUTO;
+            retProfile = ENC_PROFILE_BASELINE;
             break;
     }
     return retProfile;

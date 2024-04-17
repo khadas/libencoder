@@ -1180,6 +1180,15 @@ i32 initEncParams(VPMultiEncHandle *handle,
     handle->cml.vuiMatrixCoefficients = encode_info.matrix_coefficients;
     handle->cml.videoRange = encode_info.video_full_range_flag;
 
+    handle->cml.profile = encode_info.profile;
+    handle->cml.level = encode_info.level;
+    if (handle->cml.profile == VCENC_H264_BASE_PROFILE) {
+        handle->cml.enableCabac = 0;//disable cabac
+    }
+    else if (handle->cml.profile == VCENC_H264_MAIN_PROFILE) {
+        handle->cml.enableCabac = 1;//enable cabac
+    }
+
     if (MATRIX_BT601 == encode_info.matrix_coefficients) {
         handle->cml.colorConversion = VCENC_RGBTOYUV_BT601_FULL_RANGE; //default use full range
     }
