@@ -1677,6 +1677,36 @@ vc_encoding_metadata_t vc_encoder_encode(vc_codec_handle_t codec_handle,
     return result;
 }
 
+
+int vc_video_encoder_change_bitrate(vc_codec_handle_t codec_handle,
+                            int bitRate)
+{
+    VCMultiEncFrameIO videoRet;
+    VCEncRet ret;
+    VPMultiEncHandle* handle = (VPMultiEncHandle *)codec_handle;
+    VCEncInst encoder = handle->vcEncInst;
+    VCEncRateCtrl rcCfg;
+
+    memset(&rcCfg, 0, sizeof(VCEncRateCtrl));
+
+    if ((ret = VCEncGetRateCtrl(encoder, &rcCfg)) != VCENC_OK) {
+        MULTI_TRACE_E("vc_video_encoder_change_bitrate getRateCtrl Error:%d",ret);
+        return -1;
+    }
+
+    MULTI_TRACE_E("vc_video_encoder_change_bitrate from %d change to %d",rcCfg.bitPerSecond,bitRate);
+    rcCfg.bitPerSecond = bitRate;
+
+    if ((ret = VCEncSetRateCtrl(encoder, &rcCfg)) != VCENC_OK) {
+        MULTI_TRACE_E("VCEncSetRateCtrl failed,%d",ret)
+        return -1;
+    }
+
+    return 0;
+}
+
+
+
 i32 encode_release(vc_codec_handle_t codec_handle)
 {
     VPMultiEncHandle *handle = (VPMultiEncHandle *)codec_handle;

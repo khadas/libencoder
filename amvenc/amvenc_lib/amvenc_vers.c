@@ -54,15 +54,15 @@ int amvenc_vers_load_Module(void)
                 goto exit;
             }
 
-            /*encoder_ops.change_bitrate = (fn_change_bitrate)dlsym(encoder_ops.libHandle, "vc_encoder_change_bitrate");
-            if (encoder_ops.change_bitrate == NULL) {
-                VLOG(ERR, "dlsym for vl_video_encoder_change_bitrate failed");
-                goto exit;
-            }*/
-
             encoder_ops.encode = (fn_encode)dlsym(encoder_ops.libHandle, "vc_encoder_encode");
             if (encoder_ops.encode == NULL) {
                 VLOG(ERR, "dlsym for vl_multi_encoder_encode failed");
+                goto exit;
+            }
+
+            encoder_ops.change_bitrate = (fn_change_bitrate)dlsym(encoder_ops.libHandle,"vc_video_encoder_change_bitrate");
+            if (encoder_ops.change_bitrate == NULL) {
+                VLOG(ERR, "dlsym for vc_video_encoder_change_bitrate failed");
                 goto exit;
             }
 
@@ -71,6 +71,7 @@ int amvenc_vers_load_Module(void)
                 VLOG(ERR, "dlsym for vl_multi_encoder_destroy failed");
                 goto exit;
             }
+
         } else {
             VLOG(ERR, "dlopen for %s failed,err:%s", LIB_ENCODER_API_NAME, dlerror());
             encoder_ops.load_count --;
