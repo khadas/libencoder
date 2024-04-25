@@ -422,8 +422,8 @@ void EncPreProcess(asicData_s *asic, preProcess_s *preProcess, void *ctx, u32 ti
     luma_stride /= pixelByte;
     chroma_stride /= pixelByte;
 
-    //regs->input_luma_stride = luma_stride;
-    //regs->input_chroma_stride = chroma_stride;
+    regs->input_luma_stride = luma_stride;
+    regs->input_chroma_stride = chroma_stride;
 
     regs->pixelsOnRow = luma_stride;
     height64 = ((preProcess->lumHeight + 63) & ~63);

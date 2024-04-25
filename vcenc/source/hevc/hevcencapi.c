@@ -7326,12 +7326,6 @@ VCEncRet VCEncStrmEncodeExt(VCEncInst inst, VCEncIn *pEncIn, const VCEncExtParaI
     asic->regs.rcQpDeltaRange = vcenc_instance->rateControl.rcQpDeltaRange;
     asic->regs.rcBaseMBComplexity = vcenc_instance->rateControl.rcBaseMBComplexity;
 
-    if (pEncIn->luma_stride != 0 && pEncIn->chroma_stride != 0) {
-        asic->regs.input_luma_stride = pEncIn->luma_stride;
-        asic->regs.input_chroma_stride = pEncIn->chroma_stride;
-        APITRACEERR("luma_stride:%d,chroma_stride:%d",asic->regs.input_luma_stride,asic->regs.input_chroma_stride);
-    }
-
     if (vcenc_instance->pass == 2) {
         i32 i;
         i32 nBlk = (vcenc_instance->width / 8) * (vcenc_instance->height / 8);
@@ -7824,6 +7818,11 @@ VCEncRet VCEncStrmEncodeExt(VCEncInst inst, VCEncIn *pEncIn, const VCEncExtParaI
         // vcenc_instance->preProcess.lumWidth = (vcenc_instance->tileCtrl[tileId].tileRight -
         //                                       vcenc_instance->tileCtrl[tileId].tileLeft + 1) * 64;
         EncPreProcess(asic, &vcenc_instance->preProcess, vcenc_instance->ctx, tileId);
+        if (pEncIn->luma_stride != 0 && pEncIn->chroma_stride != 0) {
+            asic->regs.input_luma_stride = pEncIn->luma_stride;
+            asic->regs.input_chroma_stride = pEncIn->chroma_stride;
+            APITRACEERR("luma_stride:%d,chroma_stride:%d",asic->regs.input_luma_stride,asic->regs.input_chroma_stride);
+        }
         vcenc_instance->tileCtrl[tileId].input_luma_stride = asic->regs.input_luma_stride;
         vcenc_instance->tileCtrl[tileId].input_chroma_stride = asic->regs.input_chroma_stride;
         vcenc_instance->tileCtrl[tileId].inputLumBase = asic->regs.inputLumBase;
