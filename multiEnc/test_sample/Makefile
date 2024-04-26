@@ -33,6 +33,9 @@
 
 .PHONY: CREATE_DIR clean all
 
+OUT_DIR ?= .
+$(info "OUT_DIR : $(OUT_DIR)")
+
 PRODUCT := VP521C
 
 $(shell cp component_list_encoder.h component/component_list.h)
@@ -68,7 +71,7 @@ VDI_VPATH       =
 
 INCLUDES = -I../vpuapi -I../vpuapi/include -I./helper -I./helper/misc -I./component
 INCLUDES += -I./component_encoder -I./ffmpeg/include
-DEFINES += -D$(PRODUCT) 
+DEFINES += -D$(PRODUCT)
 
 ifeq ($(USE_RTL_SIM), yes)
 DEFINES += -DCNM_SIM_PLATFORM -DCNM_SIM_DPI_INTERFACE -DSUPPORT_ENCODER
@@ -147,36 +150,35 @@ VPATH += helper:
 VPATH += helper/bitstream:
 VPATH += helper/comparator:
 VPATH += helper/display:helper/misc:helper/yuv:component:
-LDLIBS  += -L../vpuapi/ -lamvenc_api
+LDLIBS  += -L$(OUT_DIR)/../vpuapi/ -lamvenc_api
 
 OBJECTNAMES=$(patsubst %.c,%.o,$(patsubst %.cpp,%.o,$(SOURCES)))
-OBJECTPATHS=$(addprefix $(OBJDIR)/,$(notdir $(OBJECTNAMES)))
+OBJECTPATHS=$(addprefix $(OUT_DIR)/$(OBJDIR)/,$(notdir $(OBJECTNAMES)))
 
 LINT_SRC_INCLUDES = -I. -I./component -I./component_decoder -I./component_encoder
 LINT_SRC_INCLUDES += -I./helper -I./helper/bitstream -I./helper/comparator -I./helper/display
 LINT_SRC_INCLUDES += -I./helper/misc -I./helper/yuv -I./helper/comparator -I./helper/display
 
 ifeq ($(USE_RTL_SIM), yes)
-all: CREATE_DIR $(OBJECTPATHS)
+all: $(OBJECTPATHS)
 else
-all: CREATE_DIR $(OBJECTPATHS)
-	$(CC) -o $(TARGET) $(LDFLAGS) -Wl,-gc-section -Wl,--start-group $(OBJECTPATHS) $(LDLIBS) -Wl,--end-group
+all: $(OBJECTPATHS)
+	$(CC) -o $(OUT_DIR)/$(TARGET) $(LDFLAGS) -Wl,-gc-section -Wl,--start-group $(OBJECTPATHS) $(LDLIBS) -Wl,--end-group
 endif
 
 -include $(OBJECTPATHS:.o=.dep)
 
 clean:
-	$(RM) $(TARGET)
-	$(RM) $(OBJDIR)/$(ALLOBJS)
-	$(RM) $(OBJDIR)/$(ALLDEPS)
+	$(RM) $(OUT_DIR)/$(TARGET)
+	$(RM) $(OUT_DIR)/$(OBJDIR)/$(ALLOBJS)
+	$(RM) $(OUT_DIR)/$(OBJDIR)/$(ALLDEPS)
 
-CREATE_DIR:
-	-mkdir -p $(OBJDIR)
-
-obj/%.o: %.c $(MAKEFILE)
-	$(CC) $(CFLAGS) -Wall -Werror -c $< -o $@ -MD -MF $(@:.o=.dep)
+%.o: %.c $(MAKEFILE)
+	$(CC) $(CFLAGS) -Wall -Werror -c $< -o $(OUT_DIR)/$@ -MD -MF $(OUT_DIR)/$(@:.o=.dep)
 
 
-lint: 
-	"$(LINT_HOME)/flint" -i"$(LINT_HOME)" $(DEFINES) $(INCLUDES) $(LINT_SRC_INCLUDES) linux_std.lnt $(HAPS_RULE) $(NONOS_RULE)  $(SOURCES) 
+lint:
+	"$(LINT_HOME)/flint" -i"$(LINT_HOME)" $(DEFINES) $(INCLUDES) $(LINT_SRC_INCLUDES) linux_std.lnt $(HAPS_RULE) $(NONOS_RULE)  $(SOURCES)
 
+$(shell mkdir -p $(OUT_DIR))
+$(shell mkdir -p $(OUT_DIR)/$(OBJDIR))

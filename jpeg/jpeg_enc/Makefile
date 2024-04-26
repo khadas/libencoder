@@ -1,3 +1,6 @@
+OUT_DIR ?= .
+$(info "OUT_DIR : $(OUT_DIR)")
+
 ifneq ($(buildroot), )
 export CC=$(shell find $(buildroot)/host/bin -name '*gnu-gcc' )
 export CXX=$(shell find $(buildroot)/host/bin -name '*gnu-g++' )
@@ -36,26 +39,29 @@ all: $(TARGET)
 
 
 $(TARGET): $(C_OBJS) $(CXX_OBJS)
-	@echo " [LINK] $@"
-	$(CXX) $(LDFLAGS) -Wl,-soname,$(TARGET) -o $@ $^
+	@echo " [LINK] $(OUT_DIR)/$@"
+	$(CXX) $(LDFLAGS) -Wl,-soname,$(TARGET) -o $(OUT_DIR)/$@ $(patsubst %, $(OUT_DIR)/%, $^)
 
 %.o: %.c
 	@echo " [CXX] $<"
-	@$(CC) -c $(CFLAGS) $(INC) $< -o $@
+	@$(CC) -c $(CFLAGS) $(INC) $< -o $(OUT_DIR)/$@
 
 %.o: %.cpp
 	@echo " [CXX] $<"
-	@$(CXX) -c $(CFLAGS) $(INC) $< -o $@
+	@$(CXX) -c $(CFLAGS) $(INC) $< -o $(OUT_DIR)/$@
 
 %.d: %.cpp
 	@echo " [DEP] $<"
-	@$(CXX) $(CFLAGS) -MM -MT "$(patsubst %.cpp,%.o,$<)" $< -MF $@
+	@$(CXX) $(CFLAGS) -MM -MT "$(patsubst %.cpp,%.o,$<)" $< -MF $(OUT_DIR)/$@
 
 %.d: %.c
 	@echo " [DEP] $<"
-	@$(CC) $(CFLAGS) -MM -MT "$(patsubst %.c,%.o,$<)" $< -MF $@
+	@$(CC) $(CFLAGS) -MM -MT "$(patsubst %.c,%.o,$<)" $< -MF $(OUT_DIR)/$@
 
 clean:
 #	@rm -f $(DEPFILES)
-	@rm -f $(C_OBJS) $(CXX_OBJS)
-	@rm -f $(TARGET)
+	@rm -f $(patsubst %, $(OUT_DIR)/%, $(C_OBJS))
+	@rm -f $(patsubst %, $(OUT_DIR)/%, $(CXX_OBJS))
+	@rm -f $(OUT_DIR)/$(TARGET)
+
+$(shell mkdir -p $(OUT_DIR))
