@@ -167,7 +167,7 @@ int initEncParams(AMVEncHandle *handle, vl_init_params_t init_param)
         handle->mEncParams.level = (AVCLevel)init_param.level;//AVC_LEVEL4;
     }
     else {
-        handle->mEncParams.profile = AVC_BASELINE;
+        handle->mEncParams.profile = AVC_MAIN;
         handle->mEncParams.level = AVC_LEVEL4;
     }
     if (AVC_BASELINE == handle->mEncParams.profile) {
