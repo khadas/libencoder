@@ -4,6 +4,8 @@
 #--------------------------------------
 .PHONY: CREATE_DIR clean all
 
+OUT_DIR ?= .
+$(info "OUT_DIR : $(OUT_DIR)")
 
 ifeq ($(ARM), 0)
 CFLAGS += -O2 -std=c99
@@ -26,7 +28,7 @@ CFLAGS  +=  $(INC)
 ARFLAGS += rcs
 TARGET = amvenc_test
 
-LDLIBS += -L../amvenc_lib
+LDLIBS += -L$(OUT_DIR)/../amvenc_lib
 LDLIBS += -lm -lrt -lamvenc
 # pthread
 LDLIBS += -lpthread -lion
@@ -45,23 +47,21 @@ SOURCES = test.c test_dma.c
 OBJECNAMES = test.o test_dma.o
 
 OBJECTNAMES=$(patsubst %.c,%.o, $(SOURCES))
-OBJECTPATHS=$(addprefix $(OBJDIR)/,$(notdir $(OBJECTNAMES)))
+OBJECTPATHS=$(addprefix $(OUT_DIR)/$(OBJDIR)/,$(notdir $(OBJECTNAMES)))
 
 
-$(TARGET): CREATE_DIR $(OBJECTPATHS)
-	$(CC) -o $(TARGET) $(LDFLAGS) $(LDLIBS) $(OBJECTPATHS)
+$(TARGET): $(OBJECTNAMES)
+	$(CC) -o $(OUT_DIR)/$(TARGET) $(LDFLAGS) $(LDLIBS) $(OBJECTPATHS)
 
-CREATE_DIR:
-	$(MKDIR) $(OBJDIR)
-
-$(OBJDIR)/%.o:%.c CREATE_DIR
-	$(CC) $(LDFLAGS) -c $< -o $@
+%.o:%.c
+	$(CC) $(LDFLAGS) -c $< -o $(OUT_DIR)/$(OBJDIR)/$@
 
 -include $(OBJECTPATHS:.o=.dep)
 
 clean:
-	$(RM) $(TARGET)
-	$(RM) $(OBJDIR)/$(ALLOBJS)
-	$(RM) $(OBJDIR)/$(ALLDEPS)
+	$(RM) $(OUT_DIR)/$(TARGET)
+	$(RM) $(OUT_DIR)/$(OBJDIR)/$(ALLOBJS)
+	$(RM) $(OUT_DIR)/$(OBJDIR)/$(ALLDEPS)
 
-
+$(shell mkdir -p $(OUT_DIR))
+$(shell mkdir -p $(OUT_DIR)/$(OBJDIR))
