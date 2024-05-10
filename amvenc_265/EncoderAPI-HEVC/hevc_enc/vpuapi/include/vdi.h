@@ -20,6 +20,17 @@
 
 #define SUPPORT_MULTI_CORE_IN_ONE_DRIVER
 #define MAX_VPU_CORE_NUM MAX_NUM_VPU_CORE
+#ifndef __ANDROID__
+/*
+ * Fixed for glibc2.33
+ * error: The futex facility returned an unexpected error code.
+ *
+ */
+#define AML_FIXED_FOR_GLIBC_2_33
+#define VPU_SHARED_FILE_NAME "/tmp/vpu_mutex.map"
+#define VPU_SHARED_FILE_SIZE 4096
+#endif
+
 #ifdef SUPPORT_SRC_BUF_CONTROL
 #define MAX_VPU_BUFFER_POOL 2000
 #else

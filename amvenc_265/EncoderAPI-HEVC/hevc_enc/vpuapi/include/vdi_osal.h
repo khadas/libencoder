@@ -168,6 +168,8 @@ extern "C" {
     int osal_getch(void);
     int osal_flush_ch(void);
     int osal_feof(osal_file_t fp);
+
+    void osal_msleep(Uint32 millisecond);
     void * osal_create_mutex(const char *name);
     void osal_close_mutex(void *handle);
     int  osal_mutex_lock(void *handle);

@@ -408,6 +408,10 @@ int osal_fprintf(osal_file_t fp, const char * _Format, ...)
 	return ret;
 }
 
+void osal_msleep(Uint32 millisecond)
+{
+	usleep(millisecond*1000);
+}
 
 
 //------------------------------------------------------------------------------

@@ -27,6 +27,7 @@
 typedef pthread_mutex_t	MUTEX_HANDLE;
 
 
+#define INIT_RETRY      100
 
 #	define SUPPORT_INTERRUPT
 #	define VPU_BIT_REG_SIZE	(0x4000*MAX_NUM_VPU_CORE)
@@ -67,6 +68,10 @@ typedef struct  {
     unsigned int product_code;
     int vpu_fd;
     vpu_instance_pool_t *pvip;
+#ifdef AML_FIXED_FOR_GLIBC_2_33
+    int shared_mutex_fd;
+    void* shared_mutex_map;
+#endif
     int task_num;
     int clock_state;
     vpudrv_buffer_t vdb_register;
@@ -142,7 +147,7 @@ int vdi_probe(u32 core_idx)
 int vdi_init(u32 core_idx)
 {
     vdi_info_t *vdi;
-    int i;
+    int i, retry_cnt = 0;
 
     if (core_idx >= MAX_NUM_VPU_CORE)
         return 0;
@@ -164,12 +169,20 @@ int vdi_init(u32 core_idx)
     }
 
     vdi_init_flag[core_idx] = INIT_VDI_STAT_OPENING;
-    vdi->vpu_fd = open(VPU_DEVICE_NAME, O_RDWR);	// if this API supports VPU parallel processing using multi VPU. the driver should be made to open multiple times.
+retry:
+    vdi->vpu_fd = open(VPU_DEVICE_NAME, O_RDWR);
     if (vdi->vpu_fd < 0) {
-        VLOG(ERR, "[VDI] Can't open vpu driver. [error=%s].\n", strerror(errno));
-        vdi_init_flag[core_idx] = INIT_VDI_STAT_DONE;
-        pthread_mutex_unlock(&vid_mutex);
-        return -1;
+        if (retry_cnt >= INIT_RETRY) {
+                VLOG(ERR, "[VDI] Can't open vpu driver. [error=%s]\n", strerror(errno));
+                vdi_init_flag[core_idx] = INIT_VDI_STAT_DONE;
+                pthread_mutex_unlock(&vid_mutex);
+                return -1;
+        } else {
+                VLOG(ERR,"[VDI] Init open vpu driver fail retrying \n");
+                retry_cnt ++;
+                osal_msleep(100);
+                goto retry;
+        }
     }
 
     memset(vdi->vpu_buffer_pool, 0x00, sizeof(vpudrv_buffer_pool_t)*MAX_VPU_BUFFER_POOL);
@@ -378,6 +391,16 @@ int vdi_release(u32 core_idx)
     if (vdi->pvip)
         munmap(vdi->pvip, (sizeof(vpu_instance_pool_t) + sizeof(MUTEX_HANDLE) * VDI_NUM_LOCK_HANDLES));
 
+#ifdef AML_FIXED_FOR_GLIBC_2_33
+    if (vdi->shared_mutex_map)
+        munmap(vdi->shared_mutex_map, sizeof(MUTEX_HANDLE) * VDI_NUM_LOCK_HANDLES);
+
+    if (vdi->shared_mutex_fd) {
+        close(vdi->shared_mutex_fd);
+        vdi->shared_mutex_fd = -1;
+    }
+#endif
+
     if (vdi->vpu_fd != -1 && vdi_init_flag[core_idx] != INIT_VDI_STAT_NULL)
     {
         close(vdi->vpu_fd);
@@ -511,14 +534,56 @@ vpu_instance_pool_t *vdi_get_instance_pool(u32 core_idx)
             return NULL;
         }
 
+#ifdef AML_FIXED_FOR_GLIBC_2_33
+        int shared_mutex_fd = open(VPU_SHARED_FILE_NAME, O_CREAT|O_RDWR, 00777);
+        if (shared_mutex_fd < 0) {
+            VLOG(ERR,
+                 "[VDI] Can't open %s. [error=%s]\n"
+                 "Maybe this file has been created by others\n",
+                 VPU_SHARED_FILE_NAME, strerror(errno));
+            return NULL;
+        }
+
+        if (ftruncate(shared_mutex_fd, VPU_SHARED_FILE_SIZE) != 0) {
+            VLOG(ERR, "[VDI] Can't truncate %s. [error=%s]\n",
+                 VPU_SHARED_FILE_NAME, strerror(errno));
+            close(shared_mutex_fd);
+            shared_mutex_fd = -1;
+            return NULL;
+        }
+
+        void *shared_mutex_map = mmap(NULL, VPU_SHARED_FILE_SIZE,
+                                      PROT_READ | PROT_WRITE,
+                                      MAP_SHARED, shared_mutex_fd, 0);
+        if (shared_mutex_map == MAP_FAILED) {
+            VLOG(ERR, "[VDI] fail to map vpu shared file=0x%x, size = %d\n",
+               (int)shared_mutex_map, VPU_SHARED_FILE_SIZE);
+            close(shared_mutex_fd);
+            shared_mutex_fd = -1;
+            return NULL;
+        }
+
+        vdi->shared_mutex_fd = shared_mutex_fd;
+        vdi->shared_mutex_map = shared_mutex_map;
+#endif
+
 #ifdef SUPPORT_MULTI_CORE_IN_ONE_DRIVER
         vdi->pvip = (vpu_instance_pool_t *)(vdb.virt_addr + (core_idx*(sizeof(vpu_instance_pool_t) + sizeof(MUTEX_HANDLE)*VDI_NUM_LOCK_HANDLES)));
 #else
         vdi->pvip = (vpu_instance_pool_t *)(vdb.virt_addr);
 #endif
+#ifdef AML_FIXED_FOR_GLIBC_2_33
+        vdi->vpu_mutex = vdi->shared_mutex_map;
+        // Unused Mutex
+        vdi->vpu_disp_mutex =
+            (void*)((unsigned long)vdi->shared_mutex_map + sizeof(MUTEX_HANDLE));
+        vdi->vmem_mutex =
+            (void*)((unsigned long)vdi->shared_mutex_map + 2 * sizeof(MUTEX_HANDLE));
+#else
         vdi->vpu_mutex = (void *)((ulong)vdi->pvip + sizeof(vpu_instance_pool_t));	//change the pointer of vpu_mutex to at end pointer of vpu_instance_pool_t to assign at allocated position.
         vdi->vpu_disp_mutex = (void *)((ulong)vdi->pvip + sizeof(vpu_instance_pool_t) + sizeof(MUTEX_HANDLE));
         vdi->vmem_mutex = (void *)((unsigned long)vdi->pvip + sizeof(vpu_instance_pool_t) + 2*sizeof(MUTEX_HANDLE));
+#endif
 
         VLOG(INFO, "[VDI] instance pool physaddr=0x%x, virtaddr=0x%x, base=0x%x, size=%d\n", (int)vdb.phys_addr, (int)vdb.virt_addr, (int)vdb.base, (int)vdb.size);
     }
